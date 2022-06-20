@@ -63,6 +63,9 @@ public class MasterThievesArmband extends Artifact {
 		partialCharge = 0;
 		chargeCap = 5+level()/2;
 
+		unique = true;
+		bones = false;
+
 		defaultAction = AC_STEAL;
 	}
 
@@ -71,6 +74,7 @@ public class MasterThievesArmband extends Artifact {
 	@Override
 	public ArrayList<String> actions(Hero hero) {
 		ArrayList<String> actions = super.actions(hero);
+		actions.remove(AC_UNEQUIP);
 		if (isEquipped(hero) && charge > 0 && !cursed) actions.add(AC_STEAL);
 		return actions;
 	}

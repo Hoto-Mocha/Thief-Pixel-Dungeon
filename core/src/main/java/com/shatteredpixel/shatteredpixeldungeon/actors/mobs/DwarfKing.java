@@ -194,8 +194,8 @@ public class DwarfKing extends Mob {
 						Sample.INSTANCE.play(Assets.Sounds.CHALLENGE);
 						yell(Messages.get(this, "wave_1"));
 					}
-					summonSubject(3, DKGhoul.class);
-					summonSubject(3, DKGhoul.class);
+					summonSubject(3, DKThief.class);
+					summonSubject(3, DKThief.class);
 					spend(3 * TICK);
 					summonsMade += 2;
 					return true;
@@ -205,12 +205,12 @@ public class DwarfKing extends Mob {
 						Sample.INSTANCE.play(Assets.Sounds.CHALLENGE);
 						yell(Messages.get(this, "wave_2"));
 					}
-					summonSubject(3, DKGhoul.class);
-					summonSubject(3, DKGhoul.class);
+					summonSubject(3, DKThief.class);
+					summonSubject(3, DKThief.class);
 					if (summonsMade == 6) {
-						summonSubject(3, DKMonk.class);
+						summonSubject(3, DKBandit.class);
 					} else {
-						summonSubject(3, DKWarlock.class);
+						summonSubject(3, DKBandit.class);
 					}
 					summonsMade += 3;
 					spend(3*TICK);
@@ -220,15 +220,15 @@ public class DwarfKing extends Mob {
 						sprite.centerEmitter().start(Speck.factory(Speck.SCREAM), 0.4f, 2);
 						Sample.INSTANCE.play(Assets.Sounds.CHALLENGE);
 						yell(Messages.get(this, "wave_3"));
-						summonSubject(3, DKWarlock.class);
-						summonSubject(3, DKMonk.class);
-						summonSubject(3, DKGhoul.class);
-						summonSubject(3, DKGhoul.class);
+						summonSubject(3, DKBandit.class);
+						summonSubject(3, DKBandit.class);
+						summonSubject(3, DKThief.class);
+						summonSubject(3, DKThief.class);
 						summonsMade += 4;
 						spend(3*TICK);
 					} else {
-						summonSubject(3, DKGolem.class);
-						summonSubject(3, DKGolem.class);
+						summonSubject(3, DKBandit.class);
+						summonSubject(3, DKBandit.class);
 						summonsMade += 2;
 						spend(TICK);
 					}
@@ -245,7 +245,7 @@ public class DwarfKing extends Mob {
 						Sample.INSTANCE.play(Assets.Sounds.CHALLENGE);
 						yell(Messages.get(this, "wave_1"));
 					}
-					summonSubject(3, DKGhoul.class);
+					summonSubject(3, DKThief.class);
 					spend(3 * TICK);
 					summonsMade++;
 					return true;
@@ -256,9 +256,9 @@ public class DwarfKing extends Mob {
 						yell(Messages.get(this, "wave_2"));
 					}
 					if (summonsMade == 7) {
-						summonSubject(3, Random.Int(2) == 0 ? DKMonk.class : DKWarlock.class);
+						summonSubject(3, Random.Int(2) == 0 ? DKBandit.class : DKBandit.class);
 					} else {
-						summonSubject(3, DKGhoul.class);
+						summonSubject(3, DKThief.class);
 					}
 					summonsMade++;
 					spend(TICK);
@@ -267,10 +267,10 @@ public class DwarfKing extends Mob {
 					sprite.centerEmitter().start(Speck.factory(Speck.SCREAM), 0.4f, 2);
 					Sample.INSTANCE.play(Assets.Sounds.CHALLENGE);
 					yell(Messages.get(this, "wave_3"));
-					summonSubject(4, DKWarlock.class);
-					summonSubject(4, DKMonk.class);
-					summonSubject(4, DKGhoul.class);
-					summonSubject(4, DKGhoul.class);
+					summonSubject(4, DKBandit.class);
+					summonSubject(4, DKBandit.class);
+					summonSubject(4, DKThief.class);
+					summonSubject(4, DKThief.class);
 					summonsMade = 12;
 					spend(TICK);
 					return true;
@@ -292,20 +292,20 @@ public class DwarfKing extends Mob {
 			//except every 9th summon, which is a golem!
 			if (summonsMade % 3 == 2) {
 				if (summonsMade % 9 == 8){
-					return summonSubject(delay, DKGolem.class);
+					return summonSubject(delay, DKBandit.class);
 				} else {
-					return summonSubject(delay, Random.Int(2) == 0 ? DKMonk.class : DKWarlock.class);
+					return summonSubject(delay, Random.Int(2) == 0 ? DKBandit.class : DKBandit.class);
 				}
 			} else {
-				return summonSubject(delay, DKGhoul.class);
+				return summonSubject(delay, DKThief.class);
 			}
 
 		} else {
 			//every 4th summon is always a monk or warlock, otherwise ghoul
 			if (summonsMade % 4 == 3) {
-				return summonSubject(delay, Random.Int(2) == 0 ? DKMonk.class : DKWarlock.class);
+				return summonSubject(delay, Random.Int(2) == 0 ? DKBandit.class : DKBandit.class);
 			} else {
-				return summonSubject(delay, DKGhoul.class);
+				return summonSubject(delay, DKThief.class);
 			}
 		}
 	}
@@ -537,31 +537,13 @@ public class DwarfKing extends Mob {
 		return super.isImmune(effect);
 	}
 
-	public static class DKGhoul extends Ghoul {
-		{
-			state = HUNTING;
-		}
-
-		@Override
-		protected boolean act() {
-			partnerID = -2; //no partners
-			return super.act();
-		}
-	}
-
-	public static class DKMonk extends Monk {
+	public static class DKThief extends Thief_4 {
 		{
 			state = HUNTING;
 		}
 	}
 
-	public static class DKWarlock extends Warlock {
-		{
-			state = HUNTING;
-		}
-	}
-
-	public static class DKGolem extends Golem {
+	public static class DKBandit extends Bandit_4 {
 		{
 			state = HUNTING;
 		}
@@ -585,13 +567,13 @@ public class DwarfKing extends Mob {
 
 			if (delay <= 0){
 
-				if (summon == DKGolem.class){
+				if (summon == DKBandit.class){
 					particles.burst(SparkParticle.FACTORY, 10);
 					Sample.INSTANCE.play(Assets.Sounds.CHARGEUP);
-				} else if (summon == DKWarlock.class){
+				} else if (summon == DKBandit.class){
 					particles.burst(ShadowParticle.CURSE, 10);
 					Sample.INSTANCE.play(Assets.Sounds.CURSED);
-				} else if (summon == DKMonk.class){
+				} else if (summon == DKBandit.class){
 					particles.burst(ElmoParticle.FACTORY, 10);
 					Sample.INSTANCE.play(Assets.Sounds.BURNING);
 				} else {
@@ -649,11 +631,11 @@ public class DwarfKing extends Mob {
 			if (on && particles == null) {
 				particles = CellEmitter.get(pos);
 
-				if (summon == DKGolem.class){
+				if (summon == DKBandit.class){
 					particles.pour(SparkParticle.STATIC, 0.05f);
-				} else if (summon == DKWarlock.class){
+				} else if (summon == DKBandit.class){
 					particles.pour(ShadowParticle.UP, 0.1f);
-				} else if (summon == DKMonk.class){
+				} else if (summon == DKBandit.class){
 					particles.pour(ElmoParticle.FACTORY, 0.1f);
 				} else {
 					particles.pour(Speck.factory(Speck.RATTLE), 0.1f);

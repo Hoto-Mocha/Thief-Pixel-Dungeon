@@ -30,6 +30,7 @@ import com.shatteredpixel.shatteredpixeldungeon.items.EquipableItem;
 import com.shatteredpixel.shatteredpixeldungeon.items.Generator;
 import com.shatteredpixel.shatteredpixeldungeon.items.Item;
 import com.shatteredpixel.shatteredpixeldungeon.items.artifacts.Artifact;
+import com.shatteredpixel.shatteredpixeldungeon.items.artifacts.MasterThievesArmband;
 import com.shatteredpixel.shatteredpixeldungeon.items.potions.AlchemicalCatalyst;
 import com.shatteredpixel.shatteredpixeldungeon.items.potions.Potion;
 import com.shatteredpixel.shatteredpixeldungeon.items.potions.brews.Brew;
@@ -71,7 +72,7 @@ public class ScrollOfTransmutation extends InventoryScroll {
 				item instanceof Wand ||
 				item instanceof Plant.Seed ||
 				item instanceof Runestone ||
-				item instanceof Artifact;
+				(item instanceof Artifact && !(item instanceof MasterThievesArmband));
 	}
 	
 	@Override

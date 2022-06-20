@@ -40,10 +40,13 @@ import com.shatteredpixel.shatteredpixeldungeon.actors.hero.abilities.warrior.He
 import com.shatteredpixel.shatteredpixeldungeon.actors.hero.abilities.warrior.Shockwave;
 import com.shatteredpixel.shatteredpixeldungeon.actors.hero.abilities.warrior.Endure;
 import com.shatteredpixel.shatteredpixeldungeon.items.BrokenSeal;
+import com.shatteredpixel.shatteredpixeldungeon.items.Generator;
 import com.shatteredpixel.shatteredpixeldungeon.items.Item;
 import com.shatteredpixel.shatteredpixeldungeon.items.Waterskin;
 import com.shatteredpixel.shatteredpixeldungeon.items.armor.ClothArmor;
 import com.shatteredpixel.shatteredpixeldungeon.items.artifacts.CloakOfShadows;
+import com.shatteredpixel.shatteredpixeldungeon.items.artifacts.MasterThievesArmband;
+import com.shatteredpixel.shatteredpixeldungeon.items.artifacts.SandalsOfNature;
 import com.shatteredpixel.shatteredpixeldungeon.items.bags.VelvetPouch;
 import com.shatteredpixel.shatteredpixeldungeon.items.food.Food;
 import com.shatteredpixel.shatteredpixeldungeon.items.potions.PotionOfHealing;
@@ -146,6 +149,10 @@ public enum HeroClass {
 		stones.quantity(3).collect();
 		Dungeon.quickslot.setSlot(0, stones);
 
+		MasterThievesArmband armband = new MasterThievesArmband();
+		(hero.belongings.artifact = armband).identify();
+		hero.belongings.artifact.activate(hero);
+
 		if (hero.belongings.armor != null){
 			hero.belongings.armor.affixSeal(new BrokenSeal());
 		}
@@ -162,6 +169,10 @@ public enum HeroClass {
 		(hero.belongings.weapon = staff).identify();
 		hero.belongings.weapon.activate(hero);
 
+		MasterThievesArmband armband = new MasterThievesArmband();
+		(hero.belongings.artifact = armband).identify();
+		hero.belongings.artifact.activate(hero);
+
 		Dungeon.quickslot.setSlot(0, staff);
 
 		new ScrollOfUpgrade().identify();
@@ -174,6 +185,10 @@ public enum HeroClass {
 		CloakOfShadows cloak = new CloakOfShadows();
 		(hero.belongings.artifact = cloak).identify();
 		hero.belongings.artifact.activate( hero );
+
+		MasterThievesArmband armband = new MasterThievesArmband();
+		(hero.belongings.misc = armband).identify();
+		hero.belongings.misc.activate(hero);
 
 		ThrowingKnife knives = new ThrowingKnife();
 		knives.quantity(3).collect();
@@ -190,6 +205,9 @@ public enum HeroClass {
 		(hero.belongings.weapon = new Gloves()).identify();
 		SpiritBow bow = new SpiritBow();
 		bow.identify().collect();
+		MasterThievesArmband armband = new MasterThievesArmband();
+		(hero.belongings.artifact = armband).identify();
+		hero.belongings.artifact.activate(hero);
 
 		Dungeon.quickslot.setSlot(0, bow);
 

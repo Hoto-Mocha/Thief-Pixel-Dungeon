@@ -49,7 +49,6 @@ import com.shatteredpixel.shatteredpixeldungeon.mechanics.Ballistica;
 import com.shatteredpixel.shatteredpixeldungeon.messages.Messages;
 import com.shatteredpixel.shatteredpixeldungeon.scenes.GameScene;
 import com.shatteredpixel.shatteredpixeldungeon.sprites.CharSprite;
-import com.shatteredpixel.shatteredpixeldungeon.sprites.LarvaSprite;
 import com.shatteredpixel.shatteredpixeldungeon.sprites.YogSprite;
 import com.shatteredpixel.shatteredpixeldungeon.tiles.DungeonTilemap;
 import com.shatteredpixel.shatteredpixeldungeon.ui.BossHealthBar;
@@ -132,20 +131,20 @@ public class YogDzewa extends Mob {
 		if (Dungeon.isChallenged(Challenges.STRONGER_BOSSES)){
 			for (int i = 0; i < 6; i++){
 				if (i >= 4){
-					regularSummons.add(YogRipper.class);
+					regularSummons.add(YogBandit.class);
 				}
 				if (i >= Statistics.spawnersAlive){
-					regularSummons.add(Larva.class);
+					regularSummons.add(YogThief.class);
 				} else {
-					regularSummons.add( i % 2 == 0 ? YogEye.class : YogScorpio.class);
+					regularSummons.add( i % 2 == 0 ? YogBandit.class : YogBandit.class);
 				}
 			}
 		} else {
 			for (int i = 0; i < 6; i++){
 				if (i >= Statistics.spawnersAlive){
-					regularSummons.add(Larva.class);
+					regularSummons.add(YogThief.class);
 				} else {
-					regularSummons.add(YogRipper.class);
+					regularSummons.add(YogBandit.class);
 				}
 			}
 		}
@@ -444,7 +443,7 @@ public class YogDzewa extends Mob {
 	public void aggro(Char ch) {
 		for (Mob mob : (Iterable<Mob>)Dungeon.level.mobs.clone()) {
 			if (Dungeon.level.distance(pos, mob.pos) <= 4 &&
-					(mob instanceof Larva || mob instanceof RipperDemon)) {
+					(mob instanceof YogThief || mob instanceof RipperDemon)) {
 				mob.aggro(ch);
 			}
 		}
@@ -455,7 +454,7 @@ public class YogDzewa extends Mob {
 	public void die( Object cause ) {
 
 		for (Mob mob : (Iterable<Mob>)Dungeon.level.mobs.clone()) {
-			if (mob instanceof Larva || mob instanceof RipperDemon) {
+			if (mob instanceof YogThief || mob instanceof RipperDemon) {
 				mob.die( cause );
 			}
 		}
@@ -569,48 +568,15 @@ public class YogDzewa extends Mob {
 		}
 	}
 
-	public static class Larva extends Mob {
-
+	public static class YogThief extends Thief_5 {
 		{
-			spriteClass = LarvaSprite.class;
-
-			HP = HT = 20;
-			defenseSkill = 12;
-			viewDistance = Light.DISTANCE;
-
-			EXP = 5;
-			maxLvl = -2;
-
-			properties.add(Property.DEMONIC);
+			state = HUNTING;
 		}
-
-		@Override
-		public int attackSkill( Char target ) {
-			return 30;
-		}
-
-		@Override
-		public int damageRoll() {
-			return Random.NormalIntRange( 15, 25 );
-		}
-
-		@Override
-		public int drRoll() {
-			return Random.NormalIntRange(0, 4);
-		}
-
 	}
 
-	//used so death to yog's ripper demons have their own rankings description
-	public static class YogRipper extends RipperDemon {}
-	public static class YogEye extends Eye {
+	public static class YogBandit extends Bandit_5 {
 		{
-			maxLvl = -2;
-		}
-	}
-	public static class YogScorpio extends Scorpio {
-		{
-			maxLvl = -2;
+			state = HUNTING;
 		}
 	}
 }
