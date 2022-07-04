@@ -27,6 +27,7 @@ import com.shatteredpixel.shatteredpixeldungeon.actors.buffs.Buff;
 import com.shatteredpixel.shatteredpixeldungeon.actors.buffs.Cripple;
 import com.shatteredpixel.shatteredpixeldungeon.actors.buffs.Poison;
 import com.shatteredpixel.shatteredpixeldungeon.actors.hero.Hero;
+import com.shatteredpixel.shatteredpixeldungeon.items.Generator;
 import com.shatteredpixel.shatteredpixeldungeon.items.Item;
 import com.shatteredpixel.shatteredpixeldungeon.sprites.BanditSprite;
 import com.watabou.utils.Random;
@@ -40,15 +41,14 @@ public class Bandit_2 extends Thief_2 {
 
 		//guaranteed first drop, then 1/3, 1/9, etc.
 		lootChance = 1f;
+		loot = Generator.Category.ARTIFACT;
 	}
 	
 	@Override
 	protected boolean steal( Hero hero ) {
 		if (super.steal( hero )) {
-			
-			Buff.prolong( hero, Blindness.class, Blindness.DURATION*0.25f );
+
 			Buff.affect( hero, Poison.class ).set(Random.Int(5, 7) );
-			Buff.prolong( hero, Cripple.class, Cripple.DURATION*0.25f );
 			Dungeon.observe();
 			
 			return true;

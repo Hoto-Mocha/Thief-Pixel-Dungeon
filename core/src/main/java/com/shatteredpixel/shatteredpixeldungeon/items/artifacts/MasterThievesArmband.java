@@ -57,7 +57,7 @@ public class MasterThievesArmband extends Artifact {
 	{
 		image = ItemSpriteSheet.ARTIFACT_ARMBAND;
 
-		levelCap = 10;
+		levelCap = 20;
 
 		charge = 0;
 		partialCharge = 0;
@@ -75,7 +75,10 @@ public class MasterThievesArmband extends Artifact {
 	public ArrayList<String> actions(Hero hero) {
 		ArrayList<String> actions = super.actions(hero);
 		actions.remove(AC_UNEQUIP);
-		if (isEquipped(hero) && charge > 0 && !cursed) actions.add(AC_STEAL);
+		actions.remove(AC_THROW);
+		actions.remove(AC_DROP);
+		actions.remove(AC_EQUIP);
+		if (charge > 0 && !cursed) actions.add(AC_STEAL);
 		return actions;
 	}
 
@@ -86,11 +89,7 @@ public class MasterThievesArmband extends Artifact {
 
 			curUser = hero;
 
-			if (!isEquipped( hero )) {
-				GLog.i( Messages.get(Artifact.class, "need_to_equip") );
-				usesTargeting = false;
-
-			} else if (charge < 1) {
+			if (charge < 1) {
 				GLog.i( Messages.get(this, "no_charge") );
 				usesTargeting = false;
 
@@ -268,7 +267,7 @@ public class MasterThievesArmband extends Artifact {
 			if (cursed) return;
 
 			if (charge < chargeCap){
-				float chargeGain = 3f * levelPortion;
+				float chargeGain = 6f * levelPortion;
 				chargeGain *= RingOfEnergy.artifactChargeMultiplier(target);
 
 				partialCharge += chargeGain;

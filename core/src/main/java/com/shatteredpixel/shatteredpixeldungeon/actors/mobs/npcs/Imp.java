@@ -24,9 +24,12 @@ package com.shatteredpixel.shatteredpixeldungeon.actors.mobs.npcs;
 import com.shatteredpixel.shatteredpixeldungeon.Dungeon;
 import com.shatteredpixel.shatteredpixeldungeon.actors.Char;
 import com.shatteredpixel.shatteredpixeldungeon.actors.buffs.Buff;
+import com.shatteredpixel.shatteredpixeldungeon.actors.mobs.Bandit_4;
+import com.shatteredpixel.shatteredpixeldungeon.actors.mobs.Bandit_5;
 import com.shatteredpixel.shatteredpixeldungeon.actors.mobs.Golem;
 import com.shatteredpixel.shatteredpixeldungeon.actors.mobs.Mob;
 import com.shatteredpixel.shatteredpixeldungeon.actors.mobs.Monk;
+import com.shatteredpixel.shatteredpixeldungeon.actors.mobs.Thief_4;
 import com.shatteredpixel.shatteredpixeldungeon.items.Generator;
 import com.shatteredpixel.shatteredpixeldungeon.items.quest.DwarfToken;
 import com.shatteredpixel.shatteredpixeldungeon.items.rings.Ring;
@@ -99,7 +102,7 @@ public class Imp extends NPC {
 		if (Quest.given) {
 			
 			DwarfToken tokens = Dungeon.hero.belongings.getItem( DwarfToken.class );
-			if (tokens != null && (tokens.quantity() >= 5 || (!Quest.alternative && tokens.quantity() >= 4))) {
+			if (tokens != null && (tokens.quantity() >= 4 || (!Quest.alternative && tokens.quantity() >= 3))) {
 				Game.runOnRenderThread(new Callback() {
 					@Override
 					public void call() {
@@ -236,8 +239,8 @@ public class Imp extends NPC {
 		
 		public static void process( Mob mob ) {
 			if (spawned && given && !completed && Dungeon.depth != 20) {
-				if ((alternative && mob instanceof Monk) ||
-					(!alternative && mob instanceof Golem)) {
+				if ((alternative && mob instanceof Thief_4) ||
+					(!alternative && mob instanceof Bandit_4)) {
 					
 					Dungeon.level.drop( new DwarfToken(), mob.pos ).sprite.drop();
 				}

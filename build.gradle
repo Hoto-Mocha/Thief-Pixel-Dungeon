@@ -14,8 +14,8 @@ allprojects {
         appName = 'Thief Pixel Dungeon'
         appPackageName = 'com.thiefpixel.thiefpixeldungeon'
 
-        appVersionCode = 629
-        appVersionName = '1.2.3_based_0.0.1'
+        appVersionCode = 630
+        appVersionName = '1.2.3_based_0.0.2'
 
         appJavaCompatibility = JavaVersion.VERSION_1_8
 

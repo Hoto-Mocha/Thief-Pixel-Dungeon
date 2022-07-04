@@ -25,6 +25,7 @@ import com.shatteredpixel.shatteredpixeldungeon.Dungeon;
 import com.shatteredpixel.shatteredpixeldungeon.actors.hero.Hero;
 import com.shatteredpixel.shatteredpixeldungeon.actors.hero.Talent;
 import com.shatteredpixel.shatteredpixeldungeon.items.artifacts.Artifact;
+import com.shatteredpixel.shatteredpixeldungeon.items.artifacts.MasterThievesArmband;
 import com.shatteredpixel.shatteredpixeldungeon.items.rings.Ring;
 import com.shatteredpixel.shatteredpixeldungeon.messages.Messages;
 import com.shatteredpixel.shatteredpixeldungeon.scenes.GameScene;
@@ -78,9 +79,8 @@ public abstract class KindofMisc extends EquipableItem {
 			enabled[2] = miscs[2] != null;
 
 			//force swapping with the same type of item if 2x of that type is already present
-			if (this instanceof Ring && hero.belongings.misc instanceof Ring){
-				enabled[0] = false; //disable artifact
-			} else if (this instanceof Artifact && hero.belongings.misc instanceof Artifact){
+			enabled[0] = false; //disable artifact
+			if (this instanceof Artifact && hero.belongings.misc instanceof Artifact){
 				enabled[2] = false; //disable ring
 			}
 

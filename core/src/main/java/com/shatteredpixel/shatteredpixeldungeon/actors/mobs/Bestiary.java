@@ -31,7 +31,7 @@ public class Bestiary {
 	public static ArrayList<Class<? extends Mob>> getMobRotation( int depth ){
 		ArrayList<Class<? extends Mob>> mobs = standardMobRotation( depth );
 		addRareMobs(depth, mobs);
-		swapMobAlts(mobs);
+		//swapMobAlts(mobs);
 		Random.shuffle(mobs);
 		return mobs;
 	}
@@ -42,35 +42,35 @@ public class Bestiary {
 
 			// Sewers
 			case 1: case 2: case 3: case 4: case 5: default:
-				//3x rat, 1x snake
 				return new ArrayList<>(Arrays.asList(
-						Thief_1.class, Thief_1.class, Thief_1.class,
-						Bandit_1.class));
+						Thief_1.class, FireThief_1.class, ElectricThief_1.class,
+						CrippleThief_1.class, WaterThief_1.class, BlindThief_1.class,
+						IceThief_1.class, Bandit_1.class));
 			// Prison
 			case 6: case 7: case 8: case 9: case 10:
-				//3x skeleton, 1x thief, 1x swarm
 				return new ArrayList<>(Arrays.asList(
-						Thief_2.class, Thief_2.class, Thief_2.class,
-						Bandit_2.class));
+						Thief_2.class, FireThief_2.class, ElectricThief_2.class,
+						CrippleThief_2.class, WaterThief_2.class, BlindThief_2.class,
+						IceThief_2.class, Bandit_2.class));
 			// Caves
 			case 11: case 12: case 13: case 14: case 15:
-				//3x bat, 1x brute, 1x shaman
 				return new ArrayList<>(Arrays.asList(
-						Thief_3.class, Thief_3.class, Thief_3.class,
-						Bandit_3.class));
+						Thief_3.class, FireThief_3.class, ElectricThief_3.class,
+						CrippleThief_3.class, WaterThief_3.class, BlindThief_3.class,
+						IceThief_3.class, Bandit_3.class));
 			// City
 			case 16: case 17: case 18: case 19: case 20:
-				//2x ghoul, 2x elemental, 1x warlock
 				return new ArrayList<>(Arrays.asList(
-						Thief_4.class, Thief_4.class, Thief_4.class,
-						Bandit_4.class));
+						Thief_4.class, FireThief_4.class, ElectricThief_4.class,
+						CrippleThief_4.class, WaterThief_4.class, BlindThief_4.class,
+						IceThief_4.class, Bandit_4.class));
 
 			// Halls
 			case 21: case 22: case 23: case 24: case 25: case 26:
-				//2x succubus, 1x evil eye
 				return new ArrayList<>(Arrays.asList(
-						Thief_5.class, Thief_5.class, Thief_5.class,
-						Bandit_5.class));
+						Thief_5.class, FireThief_5.class, ElectricThief_5.class,
+						CrippleThief_5.class, WaterThief_5.class, BlindThief_5.class,
+						IceThief_5.class, Bandit_5.class));
 		}
 
 	}
