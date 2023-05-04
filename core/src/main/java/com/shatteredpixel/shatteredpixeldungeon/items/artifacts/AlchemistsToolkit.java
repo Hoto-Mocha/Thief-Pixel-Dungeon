@@ -3,7 +3,7 @@
  * Copyright (C) 2012-2015 Oleg Dolya
  *
  * Shattered Pixel Dungeon
- * Copyright (C) 2014-2022 Evan Debenham
+ * Copyright (C) 2014-2023 Evan Debenham
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -23,7 +23,9 @@ package com.shatteredpixel.shatteredpixeldungeon.items.artifacts;
 
 import com.shatteredpixel.shatteredpixeldungeon.Assets;
 import com.shatteredpixel.shatteredpixeldungeon.Dungeon;
+import com.shatteredpixel.shatteredpixeldungeon.actors.buffs.MagicImmune;
 import com.shatteredpixel.shatteredpixeldungeon.actors.hero.Hero;
+import com.shatteredpixel.shatteredpixeldungeon.actors.hero.Talent;
 import com.shatteredpixel.shatteredpixeldungeon.items.Item;
 import com.shatteredpixel.shatteredpixeldungeon.items.Recipe;
 import com.shatteredpixel.shatteredpixeldungeon.items.rings.RingOfEnergy;
@@ -61,7 +63,7 @@ public class AlchemistsToolkit extends Artifact {
 	@Override
 	public ArrayList<String> actions( Hero hero ) {
 		ArrayList<String> actions = super.actions( hero );
-		if (isEquipped( hero ) && !cursed) {
+		if (isEquipped( hero ) && !cursed && hero.buff(MagicImmune.class) == null) {
 			actions.add(AC_BREW);
 			if (level() < levelCap) {
 				actions.add(AC_ENERGIZE);
@@ -75,6 +77,8 @@ public class AlchemistsToolkit extends Artifact {
 
 		super.execute(hero, action);
 
+		if (hero.buff(MagicImmune.class) != null) return;
+
 		if (action.equals(AC_BREW)){
 			if (!isEquipped(hero))              GLog.i( Messages.get(this, "need_to_equip") );
 			else if (cursed)                    GLog.w( Messages.get(this, "cursed") );
@@ -87,14 +91,14 @@ public class AlchemistsToolkit extends Artifact {
 		} else if (action.equals(AC_ENERGIZE)){
 			if (!isEquipped(hero))              GLog.i( Messages.get(this, "need_to_equip") );
 			else if (cursed)                    GLog.w( Messages.get(this, "cursed") );
-			else if (Dungeon.energy < 5)        GLog.w( Messages.get(this, "need_energy") );
+			else if (Dungeon.energy < 6)        GLog.w( Messages.get(this, "need_energy") );
 			else {
 
-				final int maxLevels = Math.min(levelCap - level(), Dungeon.energy/5);
+				final int maxLevels = Math.min(levelCap - level(), Dungeon.energy/6);
 
 				String[] options;
 				if (maxLevels > 1){
-					options = new String[]{ Messages.get(this, "energize_1"), Messages.get(this, "energize_all", 5*maxLevels, maxLevels)};
+					options = new String[]{ Messages.get(this, "energize_1"), Messages.get(this, "energize_all", 6*maxLevels, maxLevels)};
 				} else {
 					options = new String[]{ Messages.get(this, "energize_1")};
 				}
@@ -108,13 +112,13 @@ public class AlchemistsToolkit extends Artifact {
 						super.onSelect(index);
 
 						if (index == 0){
-							Dungeon.energy -= 5;
+							Dungeon.energy -= 6;
 							Sample.INSTANCE.play(Assets.Sounds.DRINK);
 							Sample.INSTANCE.playDelayed(Assets.Sounds.PUFF, 0.5f);
 							Dungeon.hero.sprite.operate(Dungeon.hero.pos);
 							upgrade();
 						} else if (index == 1){
-							Dungeon.energy -= 5*maxLevels;
+							Dungeon.energy -= 6*maxLevels;
 							Sample.INSTANCE.play(Assets.Sounds.DRINK);
 							Sample.INSTANCE.playDelayed(Assets.Sounds.PUFF, 0.5f);
 							Dungeon.hero.sprite.operate(Dungeon.hero.pos);
@@ -141,7 +145,7 @@ public class AlchemistsToolkit extends Artifact {
 
 	@Override
 	public String status() {
-		if (isEquipped(Dungeon.hero) && warmUpDelay > 0){
+		if (isEquipped(Dungeon.hero) && warmUpDelay > 0 && !cursed){
 			return Messages.format( "%d%%", 100 - (int)warmUpDelay );
 		} else {
 			return super.status();
@@ -155,6 +159,7 @@ public class AlchemistsToolkit extends Artifact {
 	
 	@Override
 	public void charge(Hero target, float amount) {
+		if (target.buff(MagicImmune.class) != null) return;
 		partialCharge += 0.25f*amount;
 		if (partialCharge >= 1){
 			partialCharge--;
@@ -170,6 +175,7 @@ public class AlchemistsToolkit extends Artifact {
 	public int consumeEnergy(int amount){
 		int result = amount - charge;
 		charge = Math.max(0, charge - amount);
+		Talent.onArtifactUsed(Dungeon.hero);
 		return Math.max(0, result);
 	}
 
@@ -215,7 +221,7 @@ public class AlchemistsToolkit extends Artifact {
 		@Override
 		public boolean act() {
 
-			if (warmUpDelay > 0){
+			if (warmUpDelay > 0 && !cursed && target.buff(MagicImmune.class) == null){
 				if (level() == 10){
 					warmUpDelay = 0;
 				} else if (warmUpDelay == 101){
@@ -232,9 +238,9 @@ public class AlchemistsToolkit extends Artifact {
 		}
 
 		public void gainCharge(float levelPortion) {
-			if (cursed) return;
+			if (cursed || target.buff(MagicImmune.class) != null) return;
 
-			//generates 2 energy every hero level, +0.1 energy per toolkit level
+			//generates 2 energy every hero level, +1 energy per toolkit level
 			//to a max of 12 energy per hero level
 			//This means that energy absorbed into the kit is recovered in 5 hero levels
 			float chargeGain = (2 + level()) * levelPortion;

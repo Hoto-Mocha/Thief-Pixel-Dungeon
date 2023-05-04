@@ -3,7 +3,7 @@
  * Copyright (C) 2012-2015 Oleg Dolya
  *
  * Shattered Pixel Dungeon
- * Copyright (C) 2014-2022 Evan Debenham
+ * Copyright (C) 2014-2023 Evan Debenham
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -21,6 +21,7 @@
 
 package com.shatteredpixel.shatteredpixeldungeon.actors.mobs;
 
+import com.shatteredpixel.shatteredpixeldungeon.Badges;
 import com.shatteredpixel.shatteredpixeldungeon.Dungeon;
 import com.shatteredpixel.shatteredpixeldungeon.actors.Actor;
 import com.shatteredpixel.shatteredpixeldungeon.actors.Char;
@@ -33,6 +34,7 @@ import com.shatteredpixel.shatteredpixeldungeon.actors.buffs.Buff;
 import com.shatteredpixel.shatteredpixeldungeon.actors.buffs.Burning;
 import com.shatteredpixel.shatteredpixeldungeon.actors.buffs.Cripple;
 import com.shatteredpixel.shatteredpixeldungeon.actors.buffs.Frost;
+import com.shatteredpixel.shatteredpixeldungeon.actors.buffs.Invisibility;
 import com.shatteredpixel.shatteredpixeldungeon.actors.buffs.Light;
 import com.shatteredpixel.shatteredpixeldungeon.actors.buffs.Ooze;
 import com.shatteredpixel.shatteredpixeldungeon.actors.buffs.Roots;
@@ -104,7 +106,7 @@ public abstract class YogFist extends Mob {
 	private boolean invulnWarned = false;
 
 	protected boolean isNearYog(){
-		int yogPos = Dungeon.level.exit + 3*Dungeon.level.width();
+		int yogPos = Dungeon.level.exit() + 3*Dungeon.level.width();
 		return Dungeon.level.distance(pos, yogPos) <= 4;
 	}
 
@@ -114,7 +116,7 @@ public abstract class YogFist extends Mob {
 			invulnWarned = true;
 			GLog.w(Messages.get(this, "invuln_warn"));
 		}
-		return isNearYog();
+		return isNearYog() || super.isInvulnerable(effect);
 	}
 
 	@Override
@@ -156,7 +158,7 @@ public abstract class YogFist extends Mob {
 
 	@Override
 	public int drRoll() {
-		return Random.NormalIntRange(0, 15);
+		return super.drRoll() + Random.NormalIntRange(0, 15);
 	}
 
 	{
@@ -311,6 +313,8 @@ public abstract class YogFist extends Mob {
 		protected void zap() {
 			spend( 1f );
 
+			Invisibility.dispel(this);
+			Char enemy = this.enemy;
 			if (hit( this, enemy, true )) {
 
 				Buff.affect( enemy, Roots.class, 3f );
@@ -338,7 +342,7 @@ public abstract class YogFist extends Mob {
 		}
 
 		private boolean canSpreadGrass(int cell){
-			int yogPos = Dungeon.level.exit + Dungeon.level.width()*3;
+			int yogPos = Dungeon.level.exit() + Dungeon.level.width()*3;
 			return Dungeon.level.distance(cell, yogPos) > 4 && !Dungeon.level.solid[cell]
 					&& !(Dungeon.level.map[cell] == Terrain.FURROWED_GRASS || Dungeon.level.map[cell] == Terrain.HIGH_GRASS);
 		}
@@ -380,7 +384,7 @@ public abstract class YogFist extends Mob {
 				b.announced = false;
 				b.set(dmg*.6f);
 				b.attachTo(this);
-				sprite.showStatus(CharSprite.WARNING, b.toString() + " " + (int)b.level());
+				sprite.showStatus(CharSprite.WARNING, Messages.titleCase(b.name()) + " " + (int)b.level());
 			} else{
 				super.damage(dmg, src);
 			}
@@ -467,12 +471,15 @@ public abstract class YogFist extends Mob {
 		protected void zap() {
 			spend( 1f );
 
+			Invisibility.dispel(this);
+			Char enemy = this.enemy;
 			if (hit( this, enemy, true )) {
 
 				enemy.damage( Random.NormalIntRange(10, 20), new LightBeam() );
 				Buff.prolong( enemy, Blindness.class, Blindness.DURATION/2f );
 
 				if (!enemy.isAlive() && enemy == Dungeon.hero) {
+					Badges.validateDeathFromEnemyMagic();
 					Dungeon.fail( getClass() );
 					GLog.n( Messages.get(Char.class, "kill", name()) );
 				}
@@ -497,7 +504,7 @@ public abstract class YogFist extends Mob {
 				} while (Dungeon.level.heroFOV[i]
 						|| Dungeon.level.solid[i]
 						|| Actor.findChar(i) != null
-						|| PathFinder.getStep(i, Dungeon.level.exit, Dungeon.level.passable) == -1);
+						|| PathFinder.getStep(i, Dungeon.level.exit(), Dungeon.level.passable) == -1);
 				ScrollOfTeleportation.appear(this, i);
 				state = WANDERING;
 				GameScene.flash(0x80FFFFFF);
@@ -530,6 +537,8 @@ public abstract class YogFist extends Mob {
 		protected void zap() {
 			spend( 1f );
 
+			Invisibility.dispel(this);
+			Char enemy = this.enemy;
 			if (hit( this, enemy, true )) {
 
 				enemy.damage( Random.NormalIntRange(10, 20), new DarkBolt() );
@@ -540,6 +549,7 @@ public abstract class YogFist extends Mob {
 				}
 
 				if (!enemy.isAlive() && enemy == Dungeon.hero) {
+					Badges.validateDeathFromEnemyMagic();
 					Dungeon.fail( getClass() );
 					GLog.n( Messages.get(Char.class, "kill", name()) );
 				}
@@ -567,7 +577,7 @@ public abstract class YogFist extends Mob {
 				} while (Dungeon.level.heroFOV[i]
 						|| Dungeon.level.solid[i]
 						|| Actor.findChar(i) != null
-						|| PathFinder.getStep(i, Dungeon.level.exit, Dungeon.level.passable) == -1);
+						|| PathFinder.getStep(i, Dungeon.level.exit(), Dungeon.level.passable) == -1);
 				ScrollOfTeleportation.appear(this, i);
 				state = WANDERING;
 				GameScene.flash(0, false);

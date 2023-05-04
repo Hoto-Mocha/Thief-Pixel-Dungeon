@@ -3,7 +3,7 @@
  * Copyright (C) 2012-2015 Oleg Dolya
  *
  * Shattered Pixel Dungeon
- * Copyright (C) 2014-2022 Evan Debenham
+ * Copyright (C) 2014-2023 Evan Debenham
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -26,6 +26,7 @@ import com.shatteredpixel.shatteredpixeldungeon.Dungeon;
 import com.shatteredpixel.shatteredpixeldungeon.actors.Char;
 import com.shatteredpixel.shatteredpixeldungeon.actors.buffs.Buff;
 import com.shatteredpixel.shatteredpixeldungeon.actors.buffs.EnhancedRings;
+import com.shatteredpixel.shatteredpixeldungeon.actors.buffs.MagicImmune;
 import com.shatteredpixel.shatteredpixeldungeon.actors.hero.Hero;
 import com.shatteredpixel.shatteredpixeldungeon.actors.hero.Talent;
 import com.shatteredpixel.shatteredpixeldungeon.items.Generator;
@@ -42,12 +43,13 @@ import com.watabou.utils.Random;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedHashMap;
 
 public class Ring extends KindofMisc {
 	
 	protected Buff buff;
 
-	private static final HashMap<String, Integer> gems = new HashMap<String, Integer>() {
+	private static final LinkedHashMap<String, Integer> gems = new LinkedHashMap<String, Integer>() {
 		{
 			put("garnet",ItemSpriteSheet.RING_GARNET);
 			put("ruby",ItemSpriteSheet.RING_RUBY);
@@ -113,6 +115,10 @@ public class Ring extends KindofMisc {
 	}
 	
 	public void activate( Char ch ) {
+		if (buff != null){
+			buff.detach();
+			buff = null;
+		}
 		buff = buff();
 		buff.attachTo( ch );
 	}
@@ -121,8 +127,10 @@ public class Ring extends KindofMisc {
 	public boolean doUnequip( Hero hero, boolean collect, boolean single ) {
 		if (super.doUnequip( hero, collect, single )) {
 
-			hero.remove( buff );
-			buff = null;
+			if (buff != null) {
+				buff.detach();
+				buff = null;
+			}
 
 			return true;
 
@@ -282,7 +290,7 @@ public class Ring extends KindofMisc {
 		levelsToID -= levelPercent;
 		if (levelsToID <= 0){
 			identify();
-			GLog.p( Messages.get(Ring.class, "identify", toString()) );
+			GLog.p( Messages.get(Ring.class, "identify", title()) );
 			Badges.validateItemLevelAquired( this );
 		}
 	}
@@ -297,6 +305,7 @@ public class Ring extends KindofMisc {
 	}
 
 	public static int getBonus(Char target, Class<?extends RingBuff> type){
+		if (target.buff(MagicImmune.class) != null) return 0;
 		int bonus = 0;
 		for (RingBuff buff : target.buffs(type)) {
 			bonus += buff.level();
@@ -305,6 +314,7 @@ public class Ring extends KindofMisc {
 	}
 
 	public static int getBuffedBonus(Char target, Class<?extends RingBuff> type){
+		if (target.buff(MagicImmune.class) != null) return 0;
 		int bonus = 0;
 		for (RingBuff buff : target.buffs(type)) {
 			bonus += buff.buffedLvl();
@@ -329,12 +339,22 @@ public class Ring extends KindofMisc {
 	}
 
 	public class RingBuff extends Buff {
-		
+
+		@Override
+		public boolean attachTo( Char target ) {
+			if (super.attachTo( target )) {
+				//if we're loading in and the hero has partially spent a turn, delay for 1 turn
+				if (target instanceof Hero && Dungeon.hero == null && cooldown() == 0 && target.cooldown() > 0) {
+					spend(TICK);
+				}
+				return true;
+			}
+			return false;
+		}
+
 		@Override
 		public boolean act() {
-			
 			spend( TICK );
-			
 			return true;
 		}
 

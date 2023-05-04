@@ -40,7 +40,7 @@ public class BlindThief_1 extends Thief_1 {
 		spriteClass = BlindThiefSprite.class;
 
 		//guaranteed first drop, then 1/3, 1/9, etc.
-		lootChance = 1f;
+		lootChance = 0.5f;
 		loot = Generator.Category.SEED;
 	}
 	

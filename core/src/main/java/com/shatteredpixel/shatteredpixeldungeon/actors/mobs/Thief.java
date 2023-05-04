@@ -3,7 +3,7 @@
  * Copyright (C) 2012-2015 Oleg Dolya
  *
  * Shattered Pixel Dungeon
- * Copyright (C) 2014-2022 Evan Debenham
+ * Copyright (C) 2014-2023 Evan Debenham
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -53,7 +53,7 @@ public class Thief extends Mob {
 		EXP = 5;
 		maxLvl = 11;
 
-		loot = Generator.Category.RING;
+		loot = Random.oneOf(Generator.Category.RING, Generator.Category.ARTIFACT);
 		lootChance = 0.03f; //initially, see lootChance()
 
 		WANDERING = new Wandering();
@@ -123,7 +123,7 @@ public class Thief extends Mob {
 
 	@Override
 	public int drRoll() {
-		return Random.NormalIntRange(0, 3);
+		return super.drRoll() + Random.NormalIntRange(0, 3);
 	}
 
 	@Override
@@ -223,7 +223,9 @@ public class Thief extends Mob {
 					if (newPos != -1) {
 
 						if (Dungeon.level.heroFOV[pos]) CellEmitter.get(pos).burst(Speck.factory(Speck.WOOL), 6);
-						pos = newPos;
+						if (Dungeon.depth % 5 != 0) {
+							pos = newPos;
+						}
 						sprite.place( pos );
 						sprite.visible = Dungeon.level.heroFOV[pos];
 						if (Dungeon.level.heroFOV[pos]) CellEmitter.get(pos).burst(Speck.factory(Speck.WOOL), 6);

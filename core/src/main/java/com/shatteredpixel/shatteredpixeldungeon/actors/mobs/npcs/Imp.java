@@ -3,7 +3,7 @@
  * Copyright (C) 2012-2015 Oleg Dolya
  *
  * Shattered Pixel Dungeon
- * Copyright (C) 2014-2022 Evan Debenham
+ * Copyright (C) 2014-2023 Evan Debenham
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -22,14 +22,13 @@
 package com.shatteredpixel.shatteredpixeldungeon.actors.mobs.npcs;
 
 import com.shatteredpixel.shatteredpixeldungeon.Dungeon;
+import com.shatteredpixel.shatteredpixeldungeon.Statistics;
 import com.shatteredpixel.shatteredpixeldungeon.actors.Char;
+import com.shatteredpixel.shatteredpixeldungeon.actors.buffs.AscensionChallenge;
 import com.shatteredpixel.shatteredpixeldungeon.actors.buffs.Buff;
-import com.shatteredpixel.shatteredpixeldungeon.actors.mobs.Bandit_4;
-import com.shatteredpixel.shatteredpixeldungeon.actors.mobs.Bandit_5;
 import com.shatteredpixel.shatteredpixeldungeon.actors.mobs.Golem;
 import com.shatteredpixel.shatteredpixeldungeon.actors.mobs.Mob;
 import com.shatteredpixel.shatteredpixeldungeon.actors.mobs.Monk;
-import com.shatteredpixel.shatteredpixeldungeon.actors.mobs.Thief_4;
 import com.shatteredpixel.shatteredpixeldungeon.items.Generator;
 import com.shatteredpixel.shatteredpixeldungeon.items.quest.DwarfToken;
 import com.shatteredpixel.shatteredpixeldungeon.items.rings.Ring;
@@ -58,10 +57,13 @@ public class Imp extends NPC {
 	
 	@Override
 	protected boolean act() {
-		
-		if (!Quest.given && Dungeon.level.heroFOV[pos]) {
+		if (Dungeon.hero.buff(AscensionChallenge.class) != null){
+			die(null);
+			return true;
+		}
+		if (!Quest.given && Dungeon.level.visited[pos]) {
 			if (!seenBefore) {
-				yell( Messages.get(this, "hey", Dungeon.hero.name() ) );
+				yell( Messages.get(this, "hey", Messages.titleCase(Dungeon.hero.name()) ) );
 			}
 			Notes.add( Notes.Landmark.IMP );
 			seenBefore = true;
@@ -76,13 +78,15 @@ public class Imp extends NPC {
 	public int defenseSkill( Char enemy ) {
 		return INFINITE_EVASION;
 	}
-	
+
 	@Override
 	public void damage( int dmg, Object src ) {
+		//do nothing
 	}
-	
+
 	@Override
-	public void add( Buff buff ) {
+	public boolean add( Buff buff ) {
+		return false;
 	}
 	
 	@Override
@@ -102,7 +106,7 @@ public class Imp extends NPC {
 		if (Quest.given) {
 			
 			DwarfToken tokens = Dungeon.hero.belongings.getItem( DwarfToken.class );
-			if (tokens != null && (tokens.quantity() >= 4 || (!Quest.alternative && tokens.quantity() >= 3))) {
+			if (tokens != null && (tokens.quantity() >= 5 || (!Quest.alternative && tokens.quantity() >= 4))) {
 				Game.runOnRenderThread(new Callback() {
 					@Override
 					public void call() {
@@ -111,8 +115,8 @@ public class Imp extends NPC {
 				});
 			} else {
 				tell( Quest.alternative ?
-						Messages.get(this, "monks_2", Dungeon.hero.name())
-						: Messages.get(this, "golems_2", Dungeon.hero.name()) );
+						Messages.get(this, "monks_2", Messages.titleCase(Dungeon.hero.name()))
+						: Messages.get(this, "golems_2", Messages.titleCase(Dungeon.hero.name())) );
 			}
 			
 		} else {
@@ -136,7 +140,7 @@ public class Imp extends NPC {
 	
 	public void flee() {
 		
-		yell( Messages.get(this, "cya", Dungeon.hero.name()) );
+		yell( Messages.get(this, "cya", Messages.titleCase(Dungeon.hero.name())) );
 		
 		destroy();
 		sprite.die();
@@ -154,6 +158,8 @@ public class Imp extends NPC {
 		
 		public static void reset() {
 			spawned = false;
+			given = false;
+			completed = false;
 
 			reward = null;
 		}
@@ -239,8 +245,8 @@ public class Imp extends NPC {
 		
 		public static void process( Mob mob ) {
 			if (spawned && given && !completed && Dungeon.depth != 20) {
-				if ((alternative && mob instanceof Thief_4) ||
-					(!alternative && mob instanceof Bandit_4)) {
+				if ((alternative && mob instanceof Monk) ||
+					(!alternative && mob instanceof Golem)) {
 					
 					Dungeon.level.drop( new DwarfToken(), mob.pos ).sprite.drop();
 				}
@@ -250,7 +256,8 @@ public class Imp extends NPC {
 		public static void complete() {
 			reward = null;
 			completed = true;
-			
+
+			Statistics.questScores[3] = 4000;
 			Notes.remove( Notes.Landmark.IMP );
 		}
 		

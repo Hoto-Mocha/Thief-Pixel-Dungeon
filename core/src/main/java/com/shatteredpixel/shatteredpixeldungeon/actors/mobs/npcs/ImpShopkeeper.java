@@ -3,7 +3,7 @@
  * Copyright (C) 2012-2015 Oleg Dolya
  *
  * Shattered Pixel Dungeon
- * Copyright (C) 2014-2022 Evan Debenham
+ * Copyright (C) 2014-2023 Evan Debenham
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -22,10 +22,7 @@
 package com.shatteredpixel.shatteredpixeldungeon.actors.mobs.npcs;
 
 import com.shatteredpixel.shatteredpixeldungeon.Dungeon;
-import com.shatteredpixel.shatteredpixeldungeon.effects.CellEmitter;
-import com.shatteredpixel.shatteredpixeldungeon.effects.Speck;
-import com.shatteredpixel.shatteredpixeldungeon.effects.particles.ElmoParticle;
-import com.shatteredpixel.shatteredpixeldungeon.items.Heap;
+import com.shatteredpixel.shatteredpixeldungeon.actors.buffs.AscensionChallenge;
 import com.shatteredpixel.shatteredpixeldungeon.messages.Messages;
 import com.shatteredpixel.shatteredpixeldungeon.sprites.ImpSprite;
 
@@ -41,25 +38,14 @@ public class ImpShopkeeper extends Shopkeeper {
 	protected boolean act() {
 
 		if (!seenBefore && Dungeon.level.heroFOV[pos]) {
-			yell( Messages.get(this, "greetings", Dungeon.hero.name() ) );
+			if (Dungeon.hero.buff(AscensionChallenge.class) == null) {
+				yell(Messages.get(this, "greetings", Messages.titleCase(Dungeon.hero.name())));
+			} else {
+				yell(Messages.get(this, "greetings_ascent", Messages.titleCase(Dungeon.hero.name())));
+			}
 			seenBefore = true;
 		}
-		
+
 		return super.act();
-	}
-	
-	@Override
-	public void flee() {
-		for (Heap heap: Dungeon.level.heaps.valueList()) {
-			if (heap.type == Heap.Type.FOR_SALE) {
-				CellEmitter.get( heap.pos ).burst( ElmoParticle.FACTORY, 4 );
-				heap.destroy();
-			}
-		}
-		
-		destroy();
-		
-		sprite.emitter().burst( Speck.factory( Speck.WOOL ), 15 );
-		sprite.killAndErase();
 	}
 }

@@ -3,7 +3,7 @@
  * Copyright (C) 2012-2015 Oleg Dolya
  *
  * Shattered Pixel Dungeon
- * Copyright (C) 2014-2022 Evan Debenham
+ * Copyright (C) 2014-2023 Evan Debenham
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -25,14 +25,12 @@ import com.shatteredpixel.shatteredpixeldungeon.Assets;
 import com.shatteredpixel.shatteredpixeldungeon.Dungeon;
 import com.shatteredpixel.shatteredpixeldungeon.actors.Actor;
 import com.shatteredpixel.shatteredpixeldungeon.actors.Char;
-import com.shatteredpixel.shatteredpixeldungeon.actors.buffs.Buff;
 import com.shatteredpixel.shatteredpixeldungeon.actors.hero.Hero;
-import com.shatteredpixel.shatteredpixeldungeon.actors.mobs.Mob;
-import com.shatteredpixel.shatteredpixeldungeon.items.artifacts.TimekeepersHourglass;
+import com.shatteredpixel.shatteredpixeldungeon.effects.Pushing;
 import com.shatteredpixel.shatteredpixeldungeon.items.scrolls.ScrollOfTeleportation;
 import com.shatteredpixel.shatteredpixeldungeon.items.scrolls.exotic.ScrollOfPassage;
+import com.shatteredpixel.shatteredpixeldungeon.levels.Level;
 import com.shatteredpixel.shatteredpixeldungeon.messages.Messages;
-import com.shatteredpixel.shatteredpixeldungeon.plants.Swiftthistle;
 import com.shatteredpixel.shatteredpixeldungeon.scenes.GameScene;
 import com.shatteredpixel.shatteredpixeldungeon.scenes.InterlevelScene;
 import com.shatteredpixel.shatteredpixeldungeon.sprites.ItemSprite;
@@ -43,6 +41,9 @@ import com.watabou.noosa.Game;
 import com.watabou.noosa.audio.Sample;
 import com.watabou.utils.Bundle;
 import com.watabou.utils.PathFinder;
+import com.watabou.utils.Random;
+
+import java.util.ArrayList;
 
 public class BeaconOfReturning extends Spell {
 	
@@ -51,6 +52,7 @@ public class BeaconOfReturning extends Spell {
 	}
 	
 	public int returnDepth	= -1;
+	public int returnBranch	= 0;
 	public int returnPos;
 	
 	@Override
@@ -94,6 +96,7 @@ public class BeaconOfReturning extends Spell {
 	
 	private void setBeacon(Hero hero ){
 		returnDepth = Dungeon.depth;
+		returnBranch = Dungeon.branch;
 		returnPos = hero.pos;
 		
 		hero.spend( 1f );
@@ -107,51 +110,56 @@ public class BeaconOfReturning extends Spell {
 	}
 	
 	private void returnBeacon( Hero hero ){
-		if (Dungeon.level.locked) {
-			GLog.w( Messages.get(this, "preventing") );
-			return;
-		}
 		
-		for (int i = 0; i < PathFinder.NEIGHBOURS8.length; i++) {
-			Char ch = Actor.findChar(hero.pos + PathFinder.NEIGHBOURS8[i]);
-			if (ch != null && ch.alignment == Char.Alignment.ENEMY) {
-				GLog.w( Messages.get(this, "creatures") );
-				return;
-			}
-		}
-		
-		if (returnDepth == Dungeon.depth) {
-			if (!Dungeon.level.passable[returnPos] && !Dungeon.level.avoid[returnPos]){
-				returnPos = Dungeon.level.entrance;
-			}
-			ScrollOfTeleportation.appear( hero, returnPos );
-			for(Mob m : Dungeon.level.mobs){
-				if (m.pos == hero.pos){
-					//displace mob
-					for(int i : PathFinder.NEIGHBOURS8){
-						if (Actor.findChar(m.pos+i) == null && Dungeon.level.passable[m.pos + i]){
-							m.pos += i;
-							m.sprite.point(m.sprite.worldToCamera(m.pos));
-							break;
-						}
+		if (returnDepth == Dungeon.depth && returnBranch == Dungeon.branch) {
+
+			Char existing = Actor.findChar(returnPos);
+			if (existing != null && existing != hero){
+				Char toPush = !Char.hasProp(existing, Char.Property.IMMOVABLE) ? hero : existing;
+
+				ArrayList<Integer> candidates = new ArrayList<>();
+				for (int n : PathFinder.NEIGHBOURS8) {
+					int cell = returnPos + n;
+					if (!Dungeon.level.solid[cell] && Actor.findChar( cell ) == null
+							&& (!Char.hasProp(toPush, Char.Property.LARGE) || Dungeon.level.openSpace[cell])) {
+						candidates.add( cell );
 					}
 				}
+				Random.shuffle(candidates);
+
+				if (!candidates.isEmpty()){
+					if (toPush == hero){
+						returnPos = candidates.get(0);
+					} else {
+						Actor.addDelayed( new Pushing( toPush, toPush.pos, candidates.get(0) ), -1 );
+						toPush.pos = candidates.get(0);
+						Dungeon.level.occupyCell(toPush);
+					}
+				} else {
+					GLog.w( Messages.get(ScrollOfTeleportation.class, "no_tele") );
+					return;
+				}
 			}
-			Dungeon.level.occupyCell(hero );
-			Dungeon.observe();
-			GameScene.updateFog();
+
+			if (!ScrollOfTeleportation.teleportToLocation(hero, returnPos)){
+				return;
+			}
+
 		} else {
 
-			TimekeepersHourglass.timeFreeze timeFreeze = Dungeon.hero.buff(TimekeepersHourglass.timeFreeze.class);
-			if (timeFreeze != null) timeFreeze.disarmPressedTraps();
-			Swiftthistle.TimeBubble timeBubble = Dungeon.hero.buff(Swiftthistle.TimeBubble.class);
-			if (timeBubble != null) timeBubble.disarmPressedTraps();
-			
+			if (!Dungeon.interfloorTeleportAllowed()) {
+				GLog.w( Messages.get(this, "preventing") );
+				return;
+			}
+
+			Level.beforeTransition();
 			InterlevelScene.mode = InterlevelScene.Mode.RETURN;
 			InterlevelScene.returnDepth = returnDepth;
+			InterlevelScene.returnBranch = returnBranch;
 			InterlevelScene.returnPos = returnPos;
 			Game.switchScene( InterlevelScene.class );
 		}
+		hero.spendAndNext( 1f );
 		detach(hero.belongings.backpack);
 	}
 	
@@ -192,8 +200,8 @@ public class BeaconOfReturning extends Spell {
 	
 	@Override
 	public int value() {
-		//prices of ingredients, divided by output quantity
-		return Math.round(quantity * ((50 + 40) / 5f));
+		//prices of ingredients, divided by output quantity, rounds down
+		return (int)((50 + 40) * (quantity/5f));
 	}
 	
 	public static class Recipe extends com.shatteredpixel.shatteredpixeldungeon.items.Recipe.SimpleRecipe {

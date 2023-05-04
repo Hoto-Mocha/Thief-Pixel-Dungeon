@@ -3,7 +3,7 @@
  * Copyright (C) 2012-2015 Oleg Dolya
  *
  * Shattered Pixel Dungeon
- * Copyright (C) 2014-2022 Evan Debenham
+ * Copyright (C) 2014-2023 Evan Debenham
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -28,7 +28,9 @@ import com.shatteredpixel.shatteredpixeldungeon.actors.buffs.Degrade;
 import com.shatteredpixel.shatteredpixeldungeon.actors.hero.Talent;
 import com.shatteredpixel.shatteredpixeldungeon.items.Item;
 import com.shatteredpixel.shatteredpixeldungeon.items.armor.Armor;
+import com.shatteredpixel.shatteredpixeldungeon.items.rings.Ring;
 import com.shatteredpixel.shatteredpixeldungeon.items.scrolls.ScrollOfUpgrade;
+import com.shatteredpixel.shatteredpixeldungeon.items.wands.Wand;
 import com.shatteredpixel.shatteredpixeldungeon.items.weapon.Weapon;
 import com.shatteredpixel.shatteredpixeldungeon.messages.Messages;
 import com.shatteredpixel.shatteredpixeldungeon.sprites.ItemSpriteSheet;
@@ -59,10 +61,14 @@ public class MagicalInfusion extends InventorySpell {
 		} else if (item instanceof Armor && ((Armor) item).glyph != null) {
 			((Armor) item).upgrade(true);
 		} else {
+			boolean wasCursed = item.cursed;
+			boolean wasCurseInfused = item instanceof Wand && ((Wand) item).curseInfusionBonus;
 			item.upgrade();
+			if (wasCursed) item.cursed = true;
+			if (wasCurseInfused) ((Wand) item).curseInfusionBonus = true;
 		}
 		
-		GLog.p( Messages.get(this, "infuse", item.name()) );
+		GLog.p( Messages.get(this, "infuse") );
 		Talent.onUpgradeScrollUsed( Dungeon.hero );
 		Badges.validateItemLevelAquired(item);
 
@@ -71,8 +77,8 @@ public class MagicalInfusion extends InventorySpell {
 	
 	@Override
 	public int value() {
-		//prices of ingredients, divided by output quantity
-		return Math.round(quantity * ((50 + 40) / 1f));
+		//prices of ingredients
+		return (50 + 40) * quantity;
 	}
 	
 	public static class Recipe extends com.shatteredpixel.shatteredpixeldungeon.items.Recipe.SimpleRecipe {

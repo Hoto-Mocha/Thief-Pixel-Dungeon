@@ -3,7 +3,7 @@
  * Copyright (C) 2012-2015 Oleg Dolya
  *
  * Shattered Pixel Dungeon
- * Copyright (C) 2014-2022 Evan Debenham
+ * Copyright (C) 2014-2023 Evan Debenham
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -50,8 +50,8 @@ public class Bones {
 
 		depth = Dungeon.depth;
 
-		//heroes which have won the game, who die far above their farthest depth, or who are challenged drop no bones.
-		if (Statistics.amuletObtained || (Statistics.deepestFloor - 5) >= depth || Dungeon.challenges > 0) {
+		//heroes drop no bones if they have the amulet, die far above their farthest depth, are challenged, or are playing with a custom seed.
+		if (Statistics.amuletObtained || (Statistics.deepestFloor - 5) >= depth || Dungeon.challenges > 0 || !Dungeon.customSeedText.isEmpty()) {
 			depth = -1;
 			return;
 		}
@@ -75,6 +75,12 @@ public class Bones {
 			switch (Random.Int(7)) {
 				case 0:
 					item = hero.belongings.weapon;
+					//if the hero has two weapons (champion), pick the stronger one
+					if (hero.belongings.secondWep != null &&
+							(item == null || hero.belongings.secondWep.trueLevel() > item.trueLevel())){
+						item = hero.belongings.secondWep;
+						break;
+					}
 					break;
 				case 1:
 					item = hero.belongings.armor;
@@ -141,8 +147,8 @@ public class Bones {
 			}
 
 		} else {
-			//heroes who are challenged cannot find bones
-			if (depth == Dungeon.depth && Dungeon.challenges == 0) {
+			//heroes who are challenged or on a seeded run cannot find bones
+			if (depth == Dungeon.depth && Dungeon.challenges == 0 && Dungeon.customSeedText.isEmpty()) {
 				Bundle emptyBones = new Bundle();
 				emptyBones.put(LEVEL, 0);
 				try {

@@ -4,7 +4,7 @@ buildscript {
         mavenCentral()
     }
     dependencies {
-        classpath 'com.android.tools.build:gradle:7.0.4'
+        classpath 'com.android.tools.build:gradle:7.4.2'
     }
 }
 
@@ -12,20 +12,20 @@ allprojects {
 
     ext {
         appName = 'Thief Pixel Dungeon'
-        appPackageName = 'com.thiefpixel.thiefpixeldungeon'
+        appPackageName = 'com.shatteredpixel.thiefpixeldungeon'
 
-        appVersionCode = 630
-        appVersionName = '1.2.3_based_0.0.2'
+        appVersionCode = 701
+        appVersionName = '2.0.2_based_0.0.3'
 
         appJavaCompatibility = JavaVersion.VERSION_1_8
 
-        appAndroidCompileSDK = 31
+        appAndroidCompileSDK = 33
         appAndroidMinSDK = 14
-        appAndroidTargetSDK = 31
+        appAndroidTargetSDK = 33
 
-        gdxVersion = '1.10.0'
-        gdxControllersVersion = '2.2.1'
-        robovmVersion = '2.3.14'
+        gdxVersion = '1.11.0'
+        gdxControllersVersion = '2.2.3-SNAPSHOT'
+        robovmVersion = '2.3.18'
     }
     version = appVersionName
 

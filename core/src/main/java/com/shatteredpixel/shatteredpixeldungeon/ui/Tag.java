@@ -3,7 +3,7 @@
  * Copyright (C) 2012-2015 Oleg Dolya
  *
  * Shattered Pixel Dungeon
- * Copyright (C) 2014-2022 Evan Debenham
+ * Copyright (C) 2014-2023 Evan Debenham
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -74,6 +74,13 @@ public class Tag extends Button {
 		flipped = value;
 		bg.flipHorizontal(value);
 		layout();
+	}
+
+	public void setColor( int color ){
+		this.r = (color >> 16) / 255f;
+		this.g = ((color >> 8) & 0xFF) / 255f;
+		this.b = (color & 0xFF) / 255f;
+		bg.hardlight( r, g, b );
 	}
 	
 	@Override

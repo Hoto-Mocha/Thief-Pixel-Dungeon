@@ -3,7 +3,7 @@
  * Copyright (C) 2012-2015 Oleg Dolya
  *
  * Shattered Pixel Dungeon
- * Copyright (C) 2014-2022 Evan Debenham
+ * Copyright (C) 2014-2023 Evan Debenham
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -25,14 +25,16 @@ import com.shatteredpixel.shatteredpixeldungeon.Assets;
 import com.shatteredpixel.shatteredpixeldungeon.Badges;
 import com.shatteredpixel.shatteredpixeldungeon.Challenges;
 import com.shatteredpixel.shatteredpixeldungeon.Chrome;
+import com.shatteredpixel.shatteredpixeldungeon.Dungeon;
 import com.shatteredpixel.shatteredpixeldungeon.GamesInProgress;
 import com.shatteredpixel.shatteredpixeldungeon.Rankings;
 import com.shatteredpixel.shatteredpixeldungeon.SPDSettings;
 import com.shatteredpixel.shatteredpixeldungeon.ShatteredPixelDungeon;
+import com.shatteredpixel.shatteredpixeldungeon.Statistics;
 import com.shatteredpixel.shatteredpixeldungeon.effects.BannerSprites;
 import com.shatteredpixel.shatteredpixeldungeon.effects.Fireball;
 import com.shatteredpixel.shatteredpixeldungeon.journal.Document;
-import com.shatteredpixel.shatteredpixeldungeon.messages.Languages;
+import com.shatteredpixel.shatteredpixeldungeon.journal.Journal;
 import com.shatteredpixel.shatteredpixeldungeon.messages.Messages;
 import com.shatteredpixel.shatteredpixeldungeon.ui.Archs;
 import com.shatteredpixel.shatteredpixeldungeon.ui.Icons;
@@ -40,8 +42,8 @@ import com.shatteredpixel.shatteredpixeldungeon.ui.RenderedTextBlock;
 import com.shatteredpixel.shatteredpixeldungeon.ui.StyledButton;
 import com.shatteredpixel.shatteredpixeldungeon.windows.WndError;
 import com.shatteredpixel.shatteredpixeldungeon.windows.WndHardNotification;
-import com.shatteredpixel.shatteredpixeldungeon.windows.WndMessage;
 import com.watabou.glwrap.Blending;
+import com.watabou.input.ControllerHandler;
 import com.watabou.noosa.Camera;
 import com.watabou.noosa.ColorBlock;
 import com.watabou.noosa.Game;
@@ -50,10 +52,15 @@ import com.watabou.noosa.audio.Music;
 import com.watabou.utils.FileUtils;
 
 import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
 
 public class WelcomeScene extends PixelScene {
 
-	private static final int LATEST_UPDATE = ShatteredPixelDungeon.v1_2_0;
+	private static final int LATEST_UPDATE = ShatteredPixelDungeon.v2_0_0;
+
+	//used so that the game does not keep showing the window forever if cleaning fails
+	private static boolean triedCleaningTemp = false;
 
 	@Override
 	public void create() {
@@ -61,7 +68,7 @@ public class WelcomeScene extends PixelScene {
 
 		final int previousVersion = SPDSettings.version();
 
-		if (FileUtils.cleanTempFiles()){
+		if (!triedCleaningTemp && FileUtils.cleanTempFiles()){
 			add(new WndHardNotification(Icons.get(Icons.WARNING),
 					Messages.get(WndError.class, "title"),
 					Messages.get(this, "save_warning"),
@@ -70,6 +77,7 @@ public class WelcomeScene extends PixelScene {
 				@Override
 				public void hide() {
 					super.hide();
+					triedCleaningTemp = true;
 					ShatteredPixelDungeon.resetScene();
 				}
 			});
@@ -135,10 +143,20 @@ public class WelcomeScene extends PixelScene {
 			protected void onClick() {
 				super.onClick();
 				if (previousVersion == 0 || SPDSettings.intro()){
+
+					if (previousVersion > 0){
+						updateVersion(previousVersion);
+					}
+
 					SPDSettings.version(ShatteredPixelDungeon.versionCode);
 					GamesInProgress.selectedClass = null;
-					GamesInProgress.curSlot = 1;
-					ShatteredPixelDungeon.switchScene(HeroSelectScene.class);
+					GamesInProgress.curSlot = GamesInProgress.firstEmpty();
+					if (GamesInProgress.curSlot == -1){
+						SPDSettings.intro(false);
+						ShatteredPixelDungeon.switchScene(TitleScene.class);
+					} else {
+						ShatteredPixelDungeon.switchScene(HeroSelectScene.class);
+					}
 				} else {
 					updateVersion(previousVersion);
 					ShatteredPixelDungeon.switchScene(TitleScene.class);
@@ -173,7 +191,7 @@ public class WelcomeScene extends PixelScene {
 		RenderedTextBlock text = PixelScene.renderTextBlock(6);
 		String message;
 		if (previousVersion == 0 || SPDSettings.intro()) {
-			message = Messages.get(this, "welcome_msg");
+			message = Document.INTROS.pageBody(0);
 		} else if (previousVersion <= ShatteredPixelDungeon.versionCode) {
 			if (previousVersion < LATEST_UPDATE){
 				message = Messages.get(this, "update_intro");
@@ -187,14 +205,28 @@ public class WelcomeScene extends PixelScene {
 				message += "\n" + Messages.get(this, "patch_translations");
 
 			}
+
 		} else {
 			message = Messages.get(this, "what_msg");
 		}
+
 		text.text(message, Math.min(w-20, 300));
 		float textSpace = okay.top() - topRegion - 4;
 		text.setPos((w - text.width()) / 2f, (topRegion + 2) + (textSpace - text.height())/2);
 		add(text);
 
+		if (SPDSettings.intro() && ControllerHandler.isControllerConnected()){
+			addToFront(new WndHardNotification(Icons.CONTROLLER.get(),
+					Messages.get(WelcomeScene.class, "controller_title"),
+					Messages.get(WelcomeScene.class, "controller_body"),
+					Messages.get(WelcomeScene.class, "controller_okay"),
+					0){
+				@Override
+				public void onBackPressed() {
+					//do nothing, must press the okay button
+				}
+			});
+		}
 	}
 
 	private void placeTorch( float x, float y ) {
@@ -214,27 +246,39 @@ public class WelcomeScene extends PixelScene {
 						Rankings.INSTANCE.loadGameData(rec);
 						Rankings.INSTANCE.saveGameData(rec);
 					} catch (Exception e) {
-						//if we encounter a fatal per-record error, then clear that record
-						Rankings.INSTANCE.records.remove(rec);
+						//if we encounter a fatal per-record error, then clear that record's data
+						rec.gameData = null;
 						ShatteredPixelDungeon.reportException(e);
 					}
 				}
+				if (Rankings.INSTANCE.latestDaily != null){
+					try {
+						Rankings.INSTANCE.loadGameData(Rankings.INSTANCE.latestDaily);
+						Rankings.INSTANCE.saveGameData(Rankings.INSTANCE.latestDaily);
+					} catch (Exception e) {
+						//if we encounter a fatal per-record error, then clear that record's data
+						Rankings.INSTANCE.latestDaily.gameData = null;
+						ShatteredPixelDungeon.reportException(e);
+					}
+				}
+				Collections.sort(Rankings.INSTANCE.records, Rankings.scoreComparator);
 				Rankings.INSTANCE.save();
 			} catch (Exception e) {
 				//if we encounter a fatal error, then just clear the rankings
 				FileUtils.deleteFile( Rankings.RANKINGS_FILE );
 				ShatteredPixelDungeon.reportException(e);
 			}
+			Dungeon.daily = Dungeon.dailyReplay = false;
 
 		}
 
-		//if the player has beaten Goo, automatically give all guidebook pages
-		if (previousVersion <= ShatteredPixelDungeon.v0_9_3c){
+		//pre-unlock Duelist for those who already have a win
+		if (previousVersion <= ShatteredPixelDungeon.v2_0_0){
 			Badges.loadGlobal();
-			if (Badges.isUnlocked(Badges.Badge.BOSS_SLAIN_1)){
-				for (String page : Document.ADVENTURERS_GUIDE.pageNames()){
-					Document.ADVENTURERS_GUIDE.readPage(page);
-				}
+			if (Badges.isUnlocked(Badges.Badge.VICTORY) && !Badges.isUnlocked(Badges.Badge.UNLOCK_DUELIST)){
+				Dungeon.customSeedText = ""; //clear in case rankings updating left this set
+				Badges.unlock(Badges.Badge.UNLOCK_DUELIST);
+				Badges.saveGlobal();
 			}
 		}
 

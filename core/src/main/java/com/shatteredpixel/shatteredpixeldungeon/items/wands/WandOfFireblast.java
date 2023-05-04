@@ -3,7 +3,7 @@
  * Copyright (C) 2012-2015 Oleg Dolya
  *
  * Shattered Pixel Dungeon
- * Copyright (C) 2014-2022 Evan Debenham
+ * Copyright (C) 2014-2023 Evan Debenham
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -58,14 +58,21 @@ public class WandOfFireblast extends DamageWand {
 		collisionProperties = Ballistica.WONT_STOP;
 	}
 
-	//1x/2x/3x damage
+	//1/2/3 base damage with 1/2/3 scaling based on charges used
 	public int min(int lvl){
 		return (1+lvl) * chargesPerCast();
 	}
 
-	//1x/2x/3x damage
+	//2/8/18 base damage with 2/4/6 scaling based on charges used
 	public int max(int lvl){
-		return (6+2*lvl) * chargesPerCast();
+		switch (chargesPerCast()){
+			case 1: default:
+				return 2 + 2*lvl;
+			case 2:
+				return 2*(4 + 2*lvl);
+			case 3:
+				return 3*(6+2*lvl);
+		}
 	}
 
 	ConeAOE cone;
@@ -88,9 +95,14 @@ public class WandOfFireblast extends DamageWand {
 				GameScene.updateMap(cell);
 			}
 
-			//only ignite cells directly near caster if they are flammable
-			if (Dungeon.level.adjacent(bolt.sourcePos, cell) && !Dungeon.level.flamable[cell]){
+			//only ignite cells directly near caster if they are flammable or solid
+			if (Dungeon.level.adjacent(bolt.sourcePos, cell)
+					&& !(Dungeon.level.flamable[cell] || Dungeon.level.solid[cell])){
 				adjacentCells.add(cell);
+				//do burn any heaps located here though
+				if (Dungeon.level.heaps.get(cell) != null){
+					Dungeon.level.heaps.get(cell).burn();
+				}
 			} else {
 				GameScene.add( Blob.seed( cell, 1+chargesPerCast(), Fire.class ) );
 			}
@@ -101,11 +113,16 @@ public class WandOfFireblast extends DamageWand {
 			}
 		}
 
-		//ignite cells that share a side with an adjacent cell, are flammable, and are further from the source pos
+		//if wand was shot right at a wall
+		if (cone.cells.isEmpty()){
+			adjacentCells.add(bolt.sourcePos);
+		}
+
+		//ignite cells that share a side with an adjacent cell, are flammable, and are closer to the collision pos
 		//This prevents short-range casts not igniting barricades or bookshelves
 		for (int cell : adjacentCells){
-			for (int i : PathFinder.NEIGHBOURS4){
-				if (Dungeon.level.trueDistance(cell+i, bolt.sourcePos) > Dungeon.level.trueDistance(cell, bolt.sourcePos)
+			for (int i : PathFinder.NEIGHBOURS8){
+				if (Dungeon.level.trueDistance(cell+i, bolt.collisionPos) < Dungeon.level.trueDistance(cell, bolt.collisionPos)
 						&& Dungeon.level.flamable[cell+i]
 						&& Fire.volumeAt(cell+i, Fire.class) == 0){
 					GameScene.add( Blob.seed( cell+i, 1+chargesPerCast(), Fire.class ) );
@@ -135,7 +152,14 @@ public class WandOfFireblast extends DamageWand {
 	@Override
 	public void onHit(MagesStaff staff, Char attacker, Char defender, int damage) {
 		//acts like blazing enchantment
-		new Blazing().proc( staff, attacker, defender, damage);
+		new FireBlastOnHit().proc( staff, attacker, defender, damage);
+	}
+
+	private static class FireBlastOnHit extends Blazing {
+		@Override
+		protected float procChanceMultiplier(Char attacker) {
+			return Wand.procChanceMultiplier(attacker);
+		}
 	}
 
 	@Override
@@ -173,7 +197,7 @@ public class WandOfFireblast extends DamageWand {
 
 	@Override
 	protected int chargesPerCast() {
-		if (charger != null && charger.target.buff(WildMagic.WildMagicTracker.class) != null){
+		if (cursed || charger != null && charger.target.buff(WildMagic.WildMagicTracker.class) != null){
 			return 1;
 		}
 		//consumes 30% of current charges, rounded up, with a min of 1 and a max of 3.

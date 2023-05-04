@@ -3,7 +3,7 @@
  * Copyright (C) 2012-2015 Oleg Dolya
  *
  * Shattered Pixel Dungeon
- * Copyright (C) 2014-2022 Evan Debenham
+ * Copyright (C) 2014-2023 Evan Debenham
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -51,7 +51,7 @@ public class SupporterScene extends PixelScene {
 		int w = Camera.main.width;
 		int h = Camera.main.height;
 
-		int elementWidth = PixelScene.landscape() ? 202 : 120;
+		int elementWidth = PixelScene.landscape() ? 250 : 120;
 
 		Archs archs = new Archs();
 		archs.setSize(w, h);
@@ -78,15 +78,15 @@ public class SupporterScene extends PixelScene {
 			@Override
 			protected void onClick() {
 				super.onClick();
-				String link = "https://www.patreon.com/ShatteredPixel";
+				String link = "https://github.com/Hoto-Mocha/ARranged-Pixel-Dungeon";
 				//tracking codes, so that the website knows where this pageview came from
-				link += "?utm_source=shatteredpd";
-				link += "&utm_medium=supporter_page";
-				link += "&utm_campaign=ingame_link";
+				//link += "?utm_source=shatteredpd";
+				//link += "&utm_medium=supporter_page";
+				//link += "&utm_campaign=ingame_link";
 				ShatteredPixelDungeon.platform.openURI(link);
 			}
 		};
-		link.icon(Icons.get(Icons.GOLD));
+		link.icon(Icons.get(Icons.WARNING));
 		link.textColor(Window.TITLE_COLOR);
 		link.setSize(elementWidth, BTN_HEIGHT);
 		add(link);
@@ -122,15 +122,12 @@ public class SupporterScene extends PixelScene {
 
 			String message = Messages.get(SupporterScene.class, "intro");
 			message += "\n\n" + Messages.get(SupporterScene.class, "patreon_msg");
-			if (Messages.lang() != Languages.ENGLISH) {
-				message += "\n" + Messages.get(SupporterScene.class, "patreon_english");
-			}
-			message += "\n\n- Evan";
+			message += "\n\n- Cocoa";
 
-			text = PixelScene.renderTextBlock(message, 6);
+			text = PixelScene.renderTextBlock(message, 6); //text size
 			add(text);
 
-			icon = Icons.get(Icons.SHPX);
+			icon = Icons.get(Icons.ARRANGED);
 			add(icon);
 
 		}
@@ -144,7 +141,7 @@ public class SupporterScene extends PixelScene {
 			text.setPos(x + bg.marginLeft(), y + bg.marginTop() + 1);
 
 			icon.y = text.bottom() - icon.height() + 4;
-			icon.x = x + 25;
+			icon.x = x + 26; //developer icon position
 
 			height = (text.bottom() + 3) - y;
 

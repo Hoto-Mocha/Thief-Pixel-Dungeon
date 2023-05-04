@@ -3,7 +3,7 @@
  * Copyright (C) 2012-2015 Oleg Dolya
  *
  * Shattered Pixel Dungeon
- * Copyright (C) 2014-2022 Evan Debenham
+ * Copyright (C) 2014-2023 Evan Debenham
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -26,6 +26,7 @@ import com.shatteredpixel.shatteredpixeldungeon.Assets;
 import com.shatteredpixel.shatteredpixeldungeon.Badges;
 import com.shatteredpixel.shatteredpixeldungeon.Challenges;
 import com.shatteredpixel.shatteredpixeldungeon.Dungeon;
+import com.shatteredpixel.shatteredpixeldungeon.Statistics;
 import com.shatteredpixel.shatteredpixeldungeon.actors.Actor;
 import com.shatteredpixel.shatteredpixeldungeon.actors.Char;
 import com.shatteredpixel.shatteredpixeldungeon.actors.buffs.Barrier;
@@ -33,6 +34,7 @@ import com.shatteredpixel.shatteredpixeldungeon.actors.buffs.Buff;
 import com.shatteredpixel.shatteredpixeldungeon.actors.buffs.Doom;
 import com.shatteredpixel.shatteredpixeldungeon.actors.buffs.LifeLink;
 import com.shatteredpixel.shatteredpixeldungeon.actors.buffs.LockedFloor;
+import com.shatteredpixel.shatteredpixeldungeon.actors.mobs.npcs.Sheep;
 import com.shatteredpixel.shatteredpixeldungeon.effects.Beam;
 import com.shatteredpixel.shatteredpixeldungeon.effects.CellEmitter;
 import com.shatteredpixel.shatteredpixeldungeon.effects.Pushing;
@@ -46,7 +48,10 @@ import com.shatteredpixel.shatteredpixeldungeon.items.KingsCrown;
 import com.shatteredpixel.shatteredpixeldungeon.items.armor.glyphs.Viscosity;
 import com.shatteredpixel.shatteredpixeldungeon.items.artifacts.DriedRose;
 import com.shatteredpixel.shatteredpixeldungeon.items.artifacts.LloydsBeacon;
+import com.shatteredpixel.shatteredpixeldungeon.items.rings.RingOfForce;
 import com.shatteredpixel.shatteredpixeldungeon.items.scrolls.ScrollOfTeleportation;
+import com.shatteredpixel.shatteredpixeldungeon.items.wands.Wand;
+import com.shatteredpixel.shatteredpixeldungeon.items.wands.WandOfLightning;
 import com.shatteredpixel.shatteredpixeldungeon.levels.CityBossLevel;
 import com.shatteredpixel.shatteredpixeldungeon.mechanics.Ballistica;
 import com.shatteredpixel.shatteredpixeldungeon.messages.Messages;
@@ -91,7 +96,7 @@ public class DwarfKing extends Mob {
 
 	@Override
 	public int drRoll() {
-		return Random.NormalIntRange(0, 10);
+		return super.drRoll() + Random.NormalIntRange(0, 10);
 	}
 
 	private int phase = 1;
@@ -134,6 +139,9 @@ public class DwarfKing extends Mob {
 		lastAbility = bundle.getInt( LAST_ABILITY );
 
 		if (phase == 2) properties.add(Property.IMMOVABLE);
+
+		BossHealthBar.assignBoss(this);
+		if (phase == 3) BossHealthBar.bleed(true);
 	}
 
 	@Override
@@ -207,11 +215,7 @@ public class DwarfKing extends Mob {
 					}
 					summonSubject(3, DKThief.class);
 					summonSubject(3, DKThief.class);
-					if (summonsMade == 6) {
-						summonSubject(3, DKBandit.class);
-					} else {
-						summonSubject(3, DKBandit.class);
-					}
+					summonSubject(3, DKBandit.class);
 					summonsMade += 3;
 					spend(3*TICK);
 					return true;
@@ -256,7 +260,7 @@ public class DwarfKing extends Mob {
 						yell(Messages.get(this, "wave_2"));
 					}
 					if (summonsMade == 7) {
-						summonSubject(3, Random.Int(2) == 0 ? DKBandit.class : DKBandit.class);
+						summonSubject(3, Random.Int(2) == 0 ? DKThief.class : DKBandit.class);
 					} else {
 						summonSubject(3, DKThief.class);
 					}
@@ -294,7 +298,7 @@ public class DwarfKing extends Mob {
 				if (summonsMade % 9 == 8){
 					return summonSubject(delay, DKBandit.class);
 				} else {
-					return summonSubject(delay, Random.Int(2) == 0 ? DKBandit.class : DKBandit.class);
+					return summonSubject(delay, Random.Int(2) == 0 ? DKThief.class : DKBandit.class);
 				}
 			} else {
 				return summonSubject(delay, DKThief.class);
@@ -303,7 +307,7 @@ public class DwarfKing extends Mob {
 		} else {
 			//every 4th summon is always a monk or warlock, otherwise ghoul
 			if (summonsMade % 4 == 3) {
-				return summonSubject(delay, Random.Int(2) == 0 ? DKBandit.class : DKBandit.class);
+				return summonSubject(delay, Random.Int(2) == 0 ? DKThief.class : DKBandit.class);
 			} else {
 				return summonSubject(delay, DKThief.class);
 			}
@@ -430,11 +434,25 @@ public class DwarfKing extends Mob {
 
 	@Override
 	public boolean isInvulnerable(Class effect) {
-		return phase == 2 && effect != KingDamager.class;
+		if (effect == KingDamager.class){
+			return false;
+		} else {
+			return phase == 2 || super.isInvulnerable(effect);
+		}
 	}
 
 	@Override
 	public void damage(int dmg, Object src) {
+		//hero only counts as unarmed if they have no weapon and aren't benefiting from force
+		if (src == Dungeon.hero && (Dungeon.hero.belongings.weapon() != null || Dungeon.hero.buff(RingOfForce.Force.class) != null)){
+			Statistics.qualifiedForBossChallengeBadge = false;
+		//Corrosion, corruption, and regrowth do no direct damage and so have their own custom logic
+		//Transfusion damages DK and so doesn't need custom logic
+		//Lightning has custom logic so that chaining it doesn't DQ for the badge
+		} else if (src instanceof Wand && !(src instanceof WandOfLightning)){
+			Statistics.qualifiedForBossChallengeBadge = false;
+		}
+
 		if (isInvulnerable(src.getClass())){
 			super.damage(dmg, src);
 			return;
@@ -499,20 +517,25 @@ public class DwarfKing extends Mob {
 
 		super.die( cause );
 
-		if (Dungeon.level.solid[pos]){
-			Heap h = Dungeon.level.heaps.get(pos);
-			if (h != null) {
-				for (Item i : h.items) {
-					Dungeon.level.drop(i, pos + Dungeon.level.width());
-				}
-				h.destroy();
+		Heap h = Dungeon.level.heaps.get(CityBossLevel.throne);
+		if (h != null) {
+			for (Item i : h.items) {
+				Dungeon.level.drop(i, CityBossLevel.throne + Dungeon.level.width());
 			}
+			h.destroy();
+		}
+
+		if (Dungeon.level.solid[pos]){
 			Dungeon.level.drop(new KingsCrown(), pos + Dungeon.level.width()).sprite.drop(pos);
 		} else {
 			Dungeon.level.drop(new KingsCrown(), pos).sprite.drop();
 		}
 
 		Badges.validateBossSlain();
+		if (Statistics.qualifiedForBossChallengeBadge){
+			Badges.validateBossChallengeCompleted();
+		}
+		Statistics.bossScores[3] += 4000;
 
 		Dungeon.level.unseal();
 
@@ -539,12 +562,14 @@ public class DwarfKing extends Mob {
 
 	public static class DKThief extends Thief_4 {
 		{
+			properties.add(Property.BOSS_MINION);
 			state = HUNTING;
 		}
 	}
 
 	public static class DKBandit extends Bandit_4 {
 		{
+			properties.add(Property.BOSS_MINION);
 			state = HUNTING;
 		}
 	}
@@ -567,18 +592,12 @@ public class DwarfKing extends Mob {
 
 			if (delay <= 0){
 
-				if (summon == DKBandit.class){
+				if (summon == DKThief.class){
 					particles.burst(SparkParticle.FACTORY, 10);
 					Sample.INSTANCE.play(Assets.Sounds.CHARGEUP);
 				} else if (summon == DKBandit.class){
 					particles.burst(ShadowParticle.CURSE, 10);
 					Sample.INSTANCE.play(Assets.Sounds.CURSED);
-				} else if (summon == DKBandit.class){
-					particles.burst(ElmoParticle.FACTORY, 10);
-					Sample.INSTANCE.play(Assets.Sounds.BURNING);
-				} else {
-					particles.burst(Speck.factory(Speck.BONE), 10);
-					Sample.INSTANCE.play(Assets.Sounds.BONES);
 				}
 				particles = null;
 
@@ -592,6 +611,11 @@ public class DwarfKing extends Mob {
 					if (!candidates.isEmpty()){
 						pos = Random.element(candidates);
 					}
+				}
+
+				//kill sheep that are right on top of the spawner instead of failing to spawn
+				if (Actor.findChar(pos) instanceof Sheep){
+					Actor.findChar(pos).die(null);
 				}
 
 				if (Actor.findChar(pos) == null) {
@@ -632,11 +656,7 @@ public class DwarfKing extends Mob {
 				particles = CellEmitter.get(pos);
 
 				if (summon == DKBandit.class){
-					particles.pour(SparkParticle.STATIC, 0.05f);
-				} else if (summon == DKBandit.class){
 					particles.pour(ShadowParticle.UP, 0.1f);
-				} else if (summon == DKBandit.class){
-					particles.pour(ElmoParticle.FACTORY, 0.1f);
 				} else {
 					particles.pour(Speck.factory(Speck.RATTLE), 0.1f);
 				}

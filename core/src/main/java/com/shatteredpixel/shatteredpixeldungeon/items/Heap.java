@@ -3,7 +3,7 @@
  * Copyright (C) 2012-2015 Oleg Dolya
  *
  * Shattered Pixel Dungeon
- * Copyright (C) 2014-2022 Evan Debenham
+ * Copyright (C) 2014-2023 Evan Debenham
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -42,6 +42,8 @@ import com.shatteredpixel.shatteredpixeldungeon.items.potions.Potion;
 import com.shatteredpixel.shatteredpixeldungeon.items.rings.RingOfWealth;
 import com.shatteredpixel.shatteredpixeldungeon.items.scrolls.Scroll;
 import com.shatteredpixel.shatteredpixeldungeon.items.wands.Wand;
+import com.shatteredpixel.shatteredpixeldungeon.items.weapon.missiles.darts.Dart;
+import com.shatteredpixel.shatteredpixeldungeon.items.weapon.missiles.darts.TippedDart;
 import com.shatteredpixel.shatteredpixeldungeon.journal.Document;
 import com.shatteredpixel.shatteredpixeldungeon.messages.Messages;
 import com.shatteredpixel.shatteredpixeldungeon.sprites.ItemSprite;
@@ -74,6 +76,7 @@ public class Heap implements Bundlable {
 	public ItemSprite sprite;
 	public boolean seen = false;
 	public boolean haunted = false;
+	public boolean autoExplored = false; //used to determine if this heap should count for exploration bonus
 	
 	public LinkedList<Item> items = new LinkedList<>();
 	
@@ -165,6 +168,13 @@ public class Heap implements Bundlable {
 		
 		if (sprite != null) {
 			sprite.view(this).place( pos );
+		}
+
+		if (TippedDart.lostDarts > 0){
+			Dart d = new Dart();
+			d.quantity(TippedDart.lostDarts);
+			TippedDart.lostDarts = 0;
+			drop(d);
 		}
 	}
 	
@@ -347,15 +357,14 @@ public class Heap implements Bundlable {
 		items.clear();
 	}
 
-	@Override
-	public String toString(){
+	public String title(){
 		switch(type){
 			case FOR_SALE:
 				Item i = peek();
 				if (size() == 1) {
-					return Messages.get(this, "for_sale", Shopkeeper.sellPrice(i), i.toString());
+					return Messages.get(this, "for_sale", Shopkeeper.sellPrice(i), i.title());
 				} else {
-					return i.toString();
+					return i.title();
 				}
 			case CHEST:
 				return Messages.get(this, "chest");
@@ -370,7 +379,7 @@ public class Heap implements Bundlable {
 			case REMAINS:
 				return Messages.get(this, "remains");
 			default:
-				return peek().toString();
+				return peek().title();
 		}
 	}
 
@@ -403,6 +412,7 @@ public class Heap implements Bundlable {
 	private static final String TYPE	= "type";
 	private static final String ITEMS	= "items";
 	private static final String HAUNTED	= "haunted";
+	private static final String AUTO_EXPLORED	= "auto_explored";
 	
 	@SuppressWarnings("unchecked")
 	@Override
@@ -427,16 +437,17 @@ public class Heap implements Bundlable {
 		}
 		
 		haunted = bundle.getBoolean( HAUNTED );
-		
+		autoExplored = bundle.getBoolean( AUTO_EXPLORED );
 	}
 
 	@Override
 	public void storeInBundle( Bundle bundle ) {
 		bundle.put( POS, pos );
 		bundle.put( SEEN, seen );
-		bundle.put( TYPE, type.toString() );
+		bundle.put( TYPE, type );
 		bundle.put( ITEMS, items );
 		bundle.put( HAUNTED, haunted );
+		bundle.put( AUTO_EXPLORED, autoExplored );
 	}
 	
 }

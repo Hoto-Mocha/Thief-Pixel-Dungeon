@@ -3,7 +3,7 @@
  * Copyright (C) 2012-2015 Oleg Dolya
  *
  * Shattered Pixel Dungeon
- * Copyright (C) 2014-2022 Evan Debenham
+ * Copyright (C) 2014-2023 Evan Debenham
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -62,7 +62,7 @@ public class ScrollEmpower extends Buff {
 
 	@Override
 	public void tintIcon(Image icon) {
-		icon.hardlight(1, 1, 0);
+		icon.hardlight(0.84f, 0.79f, 0.65f); //scroll colors
 	}
 
 	@Override
@@ -76,13 +76,8 @@ public class ScrollEmpower extends Buff {
 	}
 
 	@Override
-	public String toString() {
-		return Messages.get(this, "name");
-	}
-
-	@Override
 	public String desc() {
-		return Messages.get(this, "desc", Dungeon.hero.pointsInTalent(Talent.EMPOWERING_SCROLLS), left);
+		return Messages.get(this, "desc", 3, left);
 	}
 
 	private static final String LEFT = "left";

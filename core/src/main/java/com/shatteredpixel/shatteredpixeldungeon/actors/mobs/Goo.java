@@ -3,7 +3,7 @@
  * Copyright (C) 2012-2015 Oleg Dolya
  *
  * Shattered Pixel Dungeon
- * Copyright (C) 2014-2022 Evan Debenham
+ * Copyright (C) 2014-2023 Evan Debenham
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -24,9 +24,11 @@ package com.shatteredpixel.shatteredpixeldungeon.actors.mobs;
 import com.shatteredpixel.shatteredpixeldungeon.Badges;
 import com.shatteredpixel.shatteredpixeldungeon.Challenges;
 import com.shatteredpixel.shatteredpixeldungeon.Dungeon;
+import com.shatteredpixel.shatteredpixeldungeon.Statistics;
 import com.shatteredpixel.shatteredpixeldungeon.actors.Actor;
 import com.shatteredpixel.shatteredpixeldungeon.actors.Char;
 import com.shatteredpixel.shatteredpixeldungeon.actors.buffs.Buff;
+import com.shatteredpixel.shatteredpixeldungeon.actors.buffs.Invisibility;
 import com.shatteredpixel.shatteredpixeldungeon.actors.buffs.LockedFloor;
 import com.shatteredpixel.shatteredpixeldungeon.actors.buffs.Ooze;
 import com.shatteredpixel.shatteredpixeldungeon.effects.Speck;
@@ -42,6 +44,7 @@ import com.shatteredpixel.shatteredpixeldungeon.ui.BossHealthBar;
 import com.shatteredpixel.shatteredpixeldungeon.utils.GLog;
 import com.watabou.noosa.Camera;
 import com.watabou.utils.Bundle;
+import com.watabou.utils.GameMath;
 import com.watabou.utils.PathFinder;
 import com.watabou.utils.Random;
 
@@ -67,6 +70,10 @@ public class Goo extends Mob {
 		int max = (HP*2 <= HT) ? 12 : 8;
 		if (pumpedUp > 0) {
 			pumpedUp = 0;
+			if (enemy == Dungeon.hero) {
+				Statistics.qualifiedForBossChallengeBadge = false;
+				Statistics.bossScores[0] -= 100;
+			}
 			return Random.NormalIntRange( min*3, max*3 );
 		} else {
 			return Random.NormalIntRange( min, max );
@@ -88,14 +95,20 @@ public class Goo extends Mob {
 
 	@Override
 	public int drRoll() {
-		return Random.NormalIntRange(0, 2);
+		return super.drRoll() + Random.NormalIntRange(0, 2);
 	}
 
 	@Override
 	public boolean act() {
 
+		if (state != HUNTING && pumpedUp > 0){
+			pumpedUp = 0;
+			sprite.idle();
+		}
+
 		if (Dungeon.level.water[pos] && HP < HT) {
 			HP += healInc;
+			Statistics.qualifiedForBossChallengeBadge = false;
 
 			LockedFloor lock = Dungeon.hero.buff(LockedFloor.class);
 			if (lock != null) lock.removeTime(healInc*2);
@@ -183,6 +196,7 @@ public class Goo extends Mob {
 					((GooSprite)sprite).triggerEmitters();
 				}
 				attack( enemy );
+				Invisibility.dispel(this);
 				spend( attackDelay() );
 			}
 
@@ -190,9 +204,13 @@ public class Goo extends Mob {
 
 		} else {
 
-			pumpedUp++;
 			if (Dungeon.isChallenged(Challenges.STRONGER_BOSSES)){
+				pumpedUp += 2;
+				//don't want to overly punish players with slow move or attack speed
+				spend(GameMath.gate(attackDelay(), Dungeon.hero.cooldown(), 3*attackDelay()));
+			} else {
 				pumpedUp++;
+				spend( attackDelay() );
 			}
 
 			((GooSprite)sprite).pumpUp( pumpedUp );
@@ -202,8 +220,6 @@ public class Goo extends Mob {
 				GLog.n( Messages.get(this, "pumpup") );
 			}
 
-			spend( attackDelay() );
-
 			return true;
 		}
 	}
@@ -211,7 +227,13 @@ public class Goo extends Mob {
 	@Override
 	public boolean attack( Char enemy, float dmgMulti, float dmgBonus, float accMulti ) {
 		boolean result = super.attack( enemy, dmgMulti, dmgBonus, accMulti );
-		pumpedUp = 0;
+		if (pumpedUp > 0) {
+			pumpedUp = 0;
+			if (enemy == Dungeon.hero) {
+				Statistics.qualifiedForBossChallengeBadge = false;
+				Statistics.bossScores[0] -= 100;
+			}
+		}
 		return result;
 	}
 
@@ -222,6 +244,15 @@ public class Goo extends Mob {
 			sprite.idle();
 		}
 		return super.getCloser( target );
+	}
+
+	@Override
+	protected boolean getFurther(int target) {
+		if (pumpedUp != 0) {
+			pumpedUp = 0;
+			sprite.idle();
+		}
+		return super.getFurther( target );
 	}
 
 	@Override
@@ -263,6 +294,10 @@ public class Goo extends Mob {
 		}
 		
 		Badges.validateBossSlain();
+		if (Statistics.qualifiedForBossChallengeBadge){
+			Badges.validateBossChallengeCompleted();
+		}
+		Statistics.bossScores[0] += 1000;
 		
 		yell( Messages.get(this, "defeated") );
 	}
@@ -303,9 +338,7 @@ public class Goo extends Mob {
 		if (state != SLEEPING) BossHealthBar.assignBoss(this);
 		if ((HP*2 <= HT)) BossHealthBar.bleed(true);
 
-		//if check is for pre-0.9.3 saves
 		healInc = bundle.getInt(HEALINC);
-
 	}
 	
 }

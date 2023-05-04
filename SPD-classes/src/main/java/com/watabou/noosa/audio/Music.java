@@ -3,7 +3,7 @@
  * Copyright (C) 2012-2015 Oleg Dolya
  *
  * Shattered Pixel Dungeon
- * Copyright (C) 2014-2022 Evan Debenham
+ * Copyright (C) 2014-2023 Evan Debenham
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -130,7 +130,6 @@ public enum Music {
 		@Override
 		public void onCompletion(com.badlogic.gdx.audio.Music music) {
 			//we do this in a separate thread to avoid graphics hitching while the music is prepared
-			//FIXME this fixes graphics stutter but there's still some audio stutter, perhaps keep more than 1 player alive?
 			if (!DeviceCompat.isDesktop()) {
 				new Thread() {
 					@Override
@@ -139,7 +138,7 @@ public enum Music {
 					}
 				}.start();
 			} else {
-				//don't use a separate thread on desktop, causes errors and makes no performance difference(?)
+				//don't use a separate thread on desktop, causes errors and makes no performance difference
 				playNextTrack(music);
 			}
 		}
@@ -202,7 +201,6 @@ public enum Music {
 		}
 	}
 
-	//TODO do we need to dispose every player? Maybe just stop them and keep an LRU cache of 2 or 3?
 	public synchronized void stop() {
 		if (player != null) {
 			player.dispose();

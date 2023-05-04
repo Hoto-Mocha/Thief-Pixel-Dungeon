@@ -39,7 +39,7 @@ public class ElectricThief_4 extends Thief_4 {
 		spriteClass = ElectricThiefSprite.class;
 
 		//guaranteed first drop, then 1/3, 1/9, etc.
-		lootChance = 1f;
+		lootChance = 0.5f;
 		loot = Generator.Category.SCROLL;
 	}
 	

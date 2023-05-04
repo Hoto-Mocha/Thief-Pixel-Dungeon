@@ -3,7 +3,7 @@
  * Copyright (C) 2012-2015 Oleg Dolya
  *
  * Shattered Pixel Dungeon
- * Copyright (C) 2014-2022 Evan Debenham
+ * Copyright (C) 2014-2023 Evan Debenham
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -22,10 +22,7 @@
 package com.shatteredpixel.shatteredpixeldungeon.items.potions;
 
 import com.shatteredpixel.shatteredpixeldungeon.Assets;
-import com.shatteredpixel.shatteredpixeldungeon.Badges;
-import com.shatteredpixel.shatteredpixeldungeon.Challenges;
 import com.shatteredpixel.shatteredpixeldungeon.Dungeon;
-import com.shatteredpixel.shatteredpixeldungeon.Statistics;
 import com.shatteredpixel.shatteredpixeldungeon.actors.Actor;
 import com.shatteredpixel.shatteredpixeldungeon.actors.Char;
 import com.shatteredpixel.shatteredpixeldungeon.actors.blobs.Fire;
@@ -50,7 +47,7 @@ import com.shatteredpixel.shatteredpixeldungeon.journal.Catalog;
 import com.shatteredpixel.shatteredpixeldungeon.levels.Terrain;
 import com.shatteredpixel.shatteredpixeldungeon.messages.Messages;
 import com.shatteredpixel.shatteredpixeldungeon.plants.Blindweed;
-import com.shatteredpixel.shatteredpixeldungeon.plants.Dreamfoil;
+import com.shatteredpixel.shatteredpixeldungeon.plants.Mageroyal;
 import com.shatteredpixel.shatteredpixeldungeon.plants.Earthroot;
 import com.shatteredpixel.shatteredpixeldungeon.plants.Fadeleaf;
 import com.shatteredpixel.shatteredpixeldungeon.plants.Firebloom;
@@ -77,6 +74,7 @@ import com.watabou.utils.Reflection;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedHashMap;
 
 public class Potion extends Item {
 
@@ -87,7 +85,7 @@ public class Potion extends Item {
 
 	private static final float TIME_TO_DRINK = 1f;
 
-	private static final HashMap<String, Integer> colors = new HashMap<String, Integer>() {
+	private static final LinkedHashMap<String, Integer> colors = new LinkedHashMap<String, Integer>() {
 		{
 			put("crimson",ItemSpriteSheet.POTION_CRIMSON);
 			put("amber",ItemSpriteSheet.POTION_AMBER);
@@ -194,26 +192,16 @@ public class Potion extends Item {
 			image = handler.image(this);
 			color = handler.label(this);
 		}
-		setAction();
 	}
-	
+
 	@Override
-	public boolean collect( Bag container ) {
-		if (super.collect( container )){
-			setAction();
-			return true;
-		} else {
-			return false;
-		}
-	}
-	
-	public void setAction(){
+	public String defaultAction() {
 		if (isKnown() && mustThrowPots.contains(this.getClass())) {
-			defaultAction = AC_THROW;
+			return AC_THROW;
 		} else if (isKnown() &&canThrowPots.contains(this.getClass())){
-			defaultAction = AC_CHOOSE;
+			return AC_CHOOSE;
 		} else {
-			defaultAction = AC_DRINK;
+			return AC_DRINK;
 		}
 	}
 	
@@ -337,12 +325,6 @@ public class Potion extends Item {
 			if (!isKnown()) {
 				handler.know(this);
 				updateQuickslot();
-				Potion p = Dungeon.hero.belongings.getItem(getClass());
-				if (p != null)  p.setAction();
-				if (ExoticPotion.regToExo.get(getClass()) != null) {
-					p = Dungeon.hero.belongings.getItem(ExoticPotion.regToExo.get(getClass()));
-					if (p != null) p.setAction();
-				}
 			}
 			
 			if (Dungeon.hero.isAlive()) {
@@ -448,7 +430,7 @@ public class Potion extends Item {
 		public static HashMap<Class<?extends Plant.Seed>, Class<?extends Potion>> types = new HashMap<>();
 		static {
 			types.put(Blindweed.Seed.class,     PotionOfInvisibility.class);
-			types.put(Dreamfoil.Seed.class,     PotionOfPurity.class);
+			types.put(Mageroyal.Seed.class,     PotionOfPurity.class);
 			types.put(Earthroot.Seed.class,     PotionOfParalyticGas.class);
 			types.put(Fadeleaf.Seed.class,      PotionOfMindVision.class);
 			types.put(Firebloom.Seed.class,     PotionOfLiquidFlame.class);

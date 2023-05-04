@@ -3,7 +3,7 @@
  * Copyright (C) 2012-2015 Oleg Dolya
  *
  * Shattered Pixel Dungeon
- * Copyright (C) 2014-2020 Evan Debenham
+ * Copyright (C) 2014-2023 Evan Debenham
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -149,10 +149,8 @@ public class v0_9_X_Changes {
 				"_-_ AOE from crush combo move being blocked by chasms\n" +
 				"_-_ Blocking enchant and barkskin only applying to the hero\n" +
 				"_-_ Ghost hero not saying anything when the hero dies\n" +
-				"_-_ Various rare AI bugs with Ghost hero"));
+				"_-_ Various rare AI bugs with Ghost hero",
 
-		changes.addButton(new ChangeButton(new Image(Assets.Sprites.SPINNER, 144, 0, 16, 16), Messages.get(ChangesScene.class, "bugfixes"),
-				"Fixed:\n" +
 				"_-_ Incendiary darts being instantly used up when used on terrain\n" +
 				"_-_ Wands of regrowth and fireblast using more than 3 charges in rare cases\n" +
 				"_-_ Knockback effects not always working on dead characters\n" +
@@ -163,10 +161,8 @@ public class v0_9_X_Changes {
 				"_-_ Seeds disappearing if they fall into a chasm with the barren land challenge enabled\n" +
 				"_-_ Displacing darts sometimes teleporting enemies into unreachable places\n" +
 				"_-_ Items with boosted levels being remove-cursable\n" +
-				"_-_ Magical infusion not clearing the degrade debuff"));
+				"_-_ Magical infusion not clearing the degrade debuff",
 
-		changes.addButton(new ChangeButton(new Image(Assets.Sprites.SPINNER, 144, 0, 16, 16), Messages.get(ChangesScene.class, "bugfixes"),
-				"Fixed:\n" +
 				"_-_ Giant swarms duplicating in enclosed spaces\n" +
 				"_-_ Giant champions being able to attack through other characters\n" +
 				"_-_ Ghouls rarely healing without reviving\n" +
@@ -235,7 +231,7 @@ public class v0_9_X_Changes {
 				"_-_ Released February 26th, 2021\n" +
 				"_-_ 78 days after Shattered v0.9.1\n" +
 				"\n" +
-				"Dev commentary will be added here in the future."));
+				"Dev commentary will be added here in the next major update."));
 
 		changes.addButton(new ChangeButton(Icons.get(Icons.TALENT), "Tier Three Talents!",
 				"_32 new talents have been added that span levels 13 to 20!_\n\n" +
@@ -305,10 +301,8 @@ public class v0_9_X_Changes {
 				"_-_ Ethereal Chains pulling a rooted hero\n" +
 				"_-_ Cloak of Shadows spending an extra charge on save/load\n" +
 				"_-_ kinetic enchantment ignoring enemy shields\n" +
-				"_-_ regrowth bombs placing plants in incorrect locations"));
+				"_-_ regrowth bombs placing plants in incorrect locations",
 
-			changes.addButton(new ChangeButton(new Image(Assets.Sprites.SPINNER, 144, 0, 16, 16), Messages.get(ChangesScene.class, "bugfixes"),
-				"Fixed:\n" +
 				"_-_ combo moves not cancelling invisibility or time freeze\n" +
 				"_-_ cases where Assassin couldn't blink to places he should be able to blink to.\n" +
 				"_-_ some on-eat talents unintentionally stacking with themselves\n" +
@@ -389,7 +383,11 @@ public class v0_9_X_Changes {
 				"_-_ Released December 11th, 2020\n" +
 				"_-_ 68 days after Shattered v0.9.0\n" +
 				"\n" +
-				"Dev commentary will be added here in the future."));
+				"v0.9.1 continued on the momentum of v0.9.0, adding a new tier of talents spanning the mid game. These talents were a lot more satisfying for players to use, as they were able to more significantly shape gameplay when compared to the early game talents added in v0.9.0.\n" +
+				"\n" +
+				"I also became a lot more sure that I was making the right call by splitting the talent system into multiple updates. v0.9.1 was released quickly, more than doubled the number of talents, and made a bunch of crucial improvements to the talents added in v0.9.0. Had I released the entire system in one go then these sorts of growing pains would have stuck around for much longer.\n" +
+				"\n" +
+				"v0.9.1 also includes the first major changes to level generation since v0.6.2! While the same base algorithms are still used to lay levels out, v0.9.1 made overall level structures more chaotic and varied, which really helped individual layouts feel more unique."));
 
 		changes.addButton(new ChangeButton(Icons.get(Icons.TALENT), "Tier Two Talents!",
 				"_A second tier of talents has been added, including twenty new talents spanning levels 7-12!_\n\n" +
@@ -433,13 +431,11 @@ public class v0_9_X_Changes {
 				"_-_ The Mage's staff is no longer automatically set to max charges when imbuing a new wand.\n" +
 				"_-_ Frozen carpaccio can now burn like mystery meat\n\n" +
 				"_-_ Necromancers now damage enemies if their summoning position is totally blocked\n" +
-				"_-_ Piranha are no longer invulnerable to electricity and frost\n\n" +
+				"_-_ Piranha are no longer invulnerable to electricity and frost",
 				"_-_ Barriers now decay more slowly when under 20 shielding.\n" +
 				"_-_ Sniper's mark, charm, and terror all now cancel if their subject is dead.\n" +
 				"_-_ Rogue's foresight can now also trigger when returning to a floor, if that floor was detected initially\n" +
-				"_-_ The Overgrowth curse can now trigger starflower effects"));
-
-		changes.addButton(new ChangeButton(Icons.get(Icons.PREFS), Messages.get(ChangesScene.class, "misc"),
+				"_-_ The Overgrowth curse can now trigger starflower effects\n\n" +
 				"_-_ Slightly adjusted the Huntress' splash art to improve details on her face.\n" +
 				"_-_ The Sad Ghost's reward UI has been improved.\n" +
 				"_-_ Small UI improvements to rankings window\n" +
@@ -464,10 +460,8 @@ public class v0_9_X_Changes {
 				"_-_ Dwarf King and some Yog fists rarely taking negative damage\n" +
 				"_-_ Warlocks not having capped health potions drops\n" +
 				"_-_ Large characters entering tunnels when vertigoed\n" +
-				"_-_ Rare AI issues when paths are blocked"));
+				"_-_ Rare AI issues when paths are blocked",
 
-		changes.addButton(new ChangeButton(new Image(Assets.Sprites.SPINNER, 144, 0, 16, 16), Messages.get(ChangesScene.class, "bugfixes"),
-				"Fixed:\n" +
 				"_-_ Various minor errors relating to time freeze\n" +
 				"_-_ Assassin blink ignoring hero being rooted\n" +
 				"_-_ Various rare bugs with corruption\n" +
@@ -541,7 +535,11 @@ public class v0_9_X_Changes {
 				"_-_ 61 days after Shattered v0.8.2\n" +
 				"_-_ 173 days after Shattered v0.8.0\n" +
 				"\n" +
-				"Dev commentary will be added here in the future."));
+				"v0.9.0 was the beginning of Shattered's second new gameplay system! The talent system was primarily designed to address consistent feedback that leveling up wasn't very satisfying. I wanted talents to deepen character customization and give the player a reason to feel excited about levelling up.\n" +
+				"\n" +
+				"I opted to split the talent system over multiple updates, rather than implement it all at once. This mean that v0.9.0 had an impressively short dev time of just two months, although it also meant that the talent system was pretty barebones to start.\n" +
+				"\n" +
+				"This update also included Shattered's first new challenge! The goal of hostile champions was to increase overall difficulty by adding new mechanics to the game, instead of removing them. This worked out very well, and led to a followup challenge addition just a couple of updates later."));
 
 		changes.addButton(new ChangeButton(Icons.get(Icons.TALENT), "Hero Talents!",
 				"_A new gameplay system has been added!_\n\n" +
@@ -581,9 +579,8 @@ public class v0_9_X_Changes {
 				"_-_ Tweaked some interface visuals to be more rounded.\n\n" +
 				"_-_ Spider webs are now flammable, and can be shot through by fireblast.\n" +
 				"_-_ The reclaim trap spell can no longer be dropped when a trap is stored in it. This prevents an exploit.\n" +
-				"_-_ Items gained from secret mazes are now known to be uncursed."));
+				"_-_ Items gained from secret mazes are now known to be uncursed.",
 
-		changes.addButton(new ChangeButton(Icons.get(Icons.PREFS), Messages.get(ChangesScene.class, "misc"),
 				"I'm making some adjustments to sewers loot to give players a bit more control of what gear they get, and to reduce the chance of spawning high tier gear that the player may never get to use:\n" +
 				"_-_ Chance for regular gear drops in the sewers to be T4/T5 reduced by 50%.\n" +
 				"_-_ Players can now see what type of weapon/armor the sad ghost has before selecting it.\n\n" +
@@ -607,15 +604,13 @@ public class v0_9_X_Changes {
 				"_-_ Spinners shooting webs though walls\n" +
 				"_-_ Elastic enchantment closing doors when used with spirit bow\n" +
 				"_-_ Shopkeepers buying items worth 0 gold\n" +
-				"_-_ Duplicate artifacts in rare cases\n" +
+				"_-_ Duplicate artifacts in rare cases",
+
 				"_-_ Custom names not applying to Mage's staff\n" +
 				"_-_ Ring of might not reducing max HP when degraded\n" +
 				"_-_ Rare bugs involving ripper demon leaping\n" +
 				"_-_ Hero unable to cleanse fire with chill when immune to it, and vice-versa\n" +
-				"_-_ DM-201's attacking while stunned"));
-
-		changes.addButton(new ChangeButton(new Image(Assets.Sprites.SPINNER, 144, 0, 16, 16), Messages.get(ChangesScene.class, "bugfixes"),
-				"Fixed (existed prior to v0.9.0):\n" +
+				"_-_ DM-201's attacking while stunned\n" +
 				"_-_ Tengu's abilities being reset by saving/loading\n" +
 				"_-_ Various cases where game win badges would not appear\n" +
 				"_-_ Force cubes trigger traps before being placed to the floor\n" +

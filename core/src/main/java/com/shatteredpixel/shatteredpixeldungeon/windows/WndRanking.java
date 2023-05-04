@@ -3,7 +3,7 @@
  * Copyright (C) 2012-2015 Oleg Dolya
  *
  * Shattered Pixel Dungeon
- * Copyright (C) 2014-2022 Evan Debenham
+ * Copyright (C) 2014-2023 Evan Debenham
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -23,9 +23,12 @@ package com.shatteredpixel.shatteredpixeldungeon.windows;
 
 import com.shatteredpixel.shatteredpixeldungeon.Assets;
 import com.shatteredpixel.shatteredpixeldungeon.Badges;
+import com.shatteredpixel.shatteredpixeldungeon.Challenges;
 import com.shatteredpixel.shatteredpixeldungeon.Dungeon;
 import com.shatteredpixel.shatteredpixeldungeon.QuickSlot;
 import com.shatteredpixel.shatteredpixeldungeon.Rankings;
+import com.shatteredpixel.shatteredpixeldungeon.SPDSettings;
+import com.shatteredpixel.shatteredpixeldungeon.ShatteredPixelDungeon;
 import com.shatteredpixel.shatteredpixeldungeon.Statistics;
 import com.shatteredpixel.shatteredpixeldungeon.actors.hero.Belongings;
 import com.shatteredpixel.shatteredpixeldungeon.actors.hero.HeroSubClass;
@@ -35,6 +38,8 @@ import com.shatteredpixel.shatteredpixeldungeon.scenes.PixelScene;
 import com.shatteredpixel.shatteredpixeldungeon.sprites.HeroSprite;
 import com.shatteredpixel.shatteredpixeldungeon.ui.BadgesGrid;
 import com.shatteredpixel.shatteredpixeldungeon.ui.BadgesList;
+import com.shatteredpixel.shatteredpixeldungeon.ui.CheckBox;
+import com.shatteredpixel.shatteredpixeldungeon.ui.IconButton;
 import com.shatteredpixel.shatteredpixeldungeon.ui.Icons;
 import com.shatteredpixel.shatteredpixeldungeon.ui.ItemSlot;
 import com.shatteredpixel.shatteredpixeldungeon.ui.RedButton;
@@ -42,6 +47,7 @@ import com.shatteredpixel.shatteredpixeldungeon.ui.RenderedTextBlock;
 import com.shatteredpixel.shatteredpixeldungeon.ui.TalentButton;
 import com.shatteredpixel.shatteredpixeldungeon.ui.TalentsPane;
 import com.shatteredpixel.shatteredpixeldungeon.ui.Window;
+import com.shatteredpixel.shatteredpixeldungeon.utils.DungeonSeed;
 import com.watabou.noosa.ColorBlock;
 import com.watabou.noosa.Game;
 import com.watabou.noosa.Group;
@@ -49,7 +55,9 @@ import com.watabou.noosa.Image;
 import com.watabou.noosa.audio.Sample;
 import com.shatteredpixel.shatteredpixeldungeon.ui.Button;
 import com.watabou.noosa.ui.Component;
+import com.watabou.utils.DeviceCompat;
 
+import java.text.NumberFormat;
 import java.util.Locale;
 
 public class WndRanking extends WndTabbed {
@@ -57,87 +65,73 @@ public class WndRanking extends WndTabbed {
 	private static final int WIDTH			= 115;
 	private static final int HEIGHT			= 144;
 	
-	private static Thread thread;
-	private String error = null;
+	private static WndRanking INSTANCE;
 	
-	private Image busy;
+	private String gameID;
+	private Rankings.Record record;
 	
 	public WndRanking( final Rankings.Record rec ) {
 		
 		super();
 		resize( WIDTH, HEIGHT );
-		
-		if (thread != null){
-			hide();
-			return;
-		}
-		
-		thread = new Thread() {
-			@Override
-			public void run() {
-				try {
-					Badges.loadGlobal();
-					Rankings.INSTANCE.loadGameData( rec );
-				} catch ( Exception e ) {
-					error = Messages.get(WndRanking.class, "error");
-				}
-			}
-		};
 
-		busy = Icons.BUSY.get();
-		busy.origin.set( busy.width / 2, busy.height / 2 );
-		busy.angularSpeed = 720;
-		busy.x = (WIDTH - busy.width) / 2;
-		busy.y = (HEIGHT - busy.height) / 2;
-		add( busy );
-		
-		thread.start();
-	}
-	
-	@Override
-	public void update() {
-		super.update();
-		
-		if (thread != null && !thread.isAlive() && busy != null) {
-			if (error == null) {
-				remove( busy );
-				busy = null;
-				if (Dungeon.hero != null) {
-					createControls();
-				} else {
-					hide();
-				}
-			} else {
-				hide();
-				Game.scene().add( new WndError( error ) );
-			}
+		if (INSTANCE != null){
+			INSTANCE.hide();
+		}
+		INSTANCE = this;
+
+		this.gameID = rec.gameID;
+		this.record = rec;
+
+		try {
+			Badges.loadGlobal();
+			Rankings.INSTANCE.loadGameData( rec );
+			createControls();
+		} catch ( Exception e ) {
+			Game.reportException(e);
+			Dungeon.hero = null;
+			createControls();
 		}
 	}
 	
 	@Override
 	public void destroy() {
 		super.destroy();
-		thread = null;
+		if (INSTANCE == this){
+			INSTANCE = null;
+		}
 	}
 	
 	private void createControls() {
-		
-		Icons[] icons =
-			{Icons.RANKINGS, Icons.BACKPACK_LRG, Icons.BADGES};
-		Group[] pages =
-			{new StatsTab(), new ItemsTab(), new BadgesTab()};
-		
-		for (int i=0; i < pages.length; i++) {
-			
-			add( pages[i] );
-			
-			Tab tab = new RankingTab( icons[i], pages[i] );
-			add( tab );
-		}
 
-		layoutTabs();
-		
-		select( 0 );
+		if (Dungeon.hero != null) {
+			Icons[] icons =
+					{Icons.RANKINGS, Icons.TALENT, Icons.BACKPACK_LRG, Icons.BADGES, Icons.CHALLENGE_ON};
+			Group[] pages =
+					{new StatsTab(), new TalentsTab(), new ItemsTab(), new BadgesTab(), null};
+
+			if (Dungeon.challenges != 0) pages[4] = new ChallengesTab();
+
+			for (int i = 0; i < pages.length; i++) {
+
+				if (pages[i] == null) {
+					break;
+				}
+
+				add(pages[i]);
+
+				Tab tab = new RankingTab(icons[i], pages[i]);
+				add(tab);
+			}
+
+			layoutTabs();
+
+			select(0);
+		} else {
+			StatsTab tab = new StatsTab();
+			add(tab);
+
+		}
 	}
 
 	private class RankingTab extends IconTab {
@@ -165,87 +159,138 @@ public class WndRanking extends WndTabbed {
 		public StatsTab() {
 			super();
 			
-			String heroClass = Dungeon.hero.className();
+			String heroClass = record.heroClass.name();
+			if (Dungeon.hero != null){
+				heroClass = Dungeon.hero.className();
+			}
 			
 			IconTitle title = new IconTitle();
-			title.icon( HeroSprite.avatar( Dungeon.hero.heroClass, Dungeon.hero.tier() ) );
-			title.label( Messages.get(this, "title", Dungeon.hero.lvl, heroClass ).toUpperCase( Locale.ENGLISH ) );
+			title.icon( HeroSprite.avatar( record.heroClass, record.armorTier ) );
+			title.label( Messages.get(this, "title", record.herolevel, heroClass ).toUpperCase( Locale.ENGLISH ) );
 			title.color(Window.TITLE_COLOR);
 			title.setRect( 0, 0, WIDTH, 0 );
 			add( title );
+
+			if (Dungeon.hero != null && Dungeon.seed != -1){
+				GAP--;
+			}
 			
-			float pos = title.bottom() + GAP;
+			float pos = title.bottom() + 1;
 
-			RedButton btnTalents = new RedButton( Messages.get(this, "talents") ){
-				@Override
-				protected void onClick() {
-					//removes talents from upper tiers
-					int tiers = 1;
-					if (Dungeon.hero.lvl >= 6) tiers++;
-					if (Dungeon.hero.lvl >= 12 && Dungeon.hero.subClass != HeroSubClass.NONE) tiers++;
-					if (Dungeon.hero.lvl >= 20 && Dungeon.hero.armorAbility != null) tiers++;
-					while (Dungeon.hero.talents.size() > tiers){
-						Dungeon.hero.talents.remove(Dungeon.hero.talents.size()-1);
-					}
-					Game.scene().addToFront( new Window(){
-						{
-							TalentsPane p = new TalentsPane(TalentButton.Mode.INFO);
-							add(p);
-							p.setPos(0, 0);
-							p.setSize(120, p.content().height());
-							resize((int)p.width(), (int)p.height());
-							p.setPos(0, 0);
-						}
-					});
-				}
-			};
-			btnTalents.icon(Icons.get(Icons.TALENT));
-			btnTalents.setRect( (WIDTH - btnTalents.reqWidth()+2)/2, pos, btnTalents.reqWidth()+2 , 16 );
-			add(btnTalents);
+			RenderedTextBlock date = PixelScene.renderTextBlock(record.date, 7);
+			date.hardlight(0xCCCCCC);
+			date.setPos(0, pos);
+			add(date);
 
-			pos = btnTalents.bottom();
+			RenderedTextBlock version = PixelScene.renderTextBlock(record.version, 7);
+			version.hardlight(0xCCCCCC);
+			version.setPos(WIDTH-version.width(), pos);
+			add(version);
 
-			if (Dungeon.challenges > 0) {
-				RedButton btnChallenges = new RedButton( Messages.get(this, "challenges") ) {
+			pos = date.bottom()+5;
+
+			NumberFormat num = NumberFormat.getInstance(Locale.US);
+
+			if (Dungeon.hero == null){
+				pos = statSlot( this, Messages.get(this, "score"), num.format( record.score ), pos );
+				pos += GAP;
+
+				Image errorIcon = Icons.WARNING.get();
+				errorIcon.y = pos;
+				add(errorIcon);
+
+				RenderedTextBlock errorText = PixelScene.renderTextBlock(Messages.get(WndRanking.class, "error"), 6);
+				errorText.maxWidth((int)(WIDTH-errorIcon.width()-GAP));
+				errorText.setPos(errorIcon.width()+GAP, pos + (errorIcon.height()-errorText.height())/2);
+				add(errorText);
+
+			} else {
+
+				pos = statSlot(this, Messages.get(this, "score"), num.format(Statistics.totalScore), pos);
+
+				IconButton scoreInfo = new IconButton(Icons.get(Icons.INFO)) {
 					@Override
 					protected void onClick() {
-						Game.scene().add( new WndChallenges( Dungeon.challenges, false ) );
+						super.onClick();
+						ShatteredPixelDungeon.scene().addToFront(new WndScoreBreakdown());
 					}
 				};
+				scoreInfo.setSize(16, 16);
+				scoreInfo.setPos(WIDTH - scoreInfo.width(), pos - 10 - GAP);
+				add(scoreInfo);
 
-				btnChallenges.icon(Icons.get(Icons.CHALLENGE_ON));
-				btnChallenges.setSize( btnChallenges.reqWidth()+2, 16 );
-				add( btnChallenges );
+				pos += GAP;
 
-				float left = (WIDTH - btnTalents.width() - btnChallenges.width())/3f;
+				int strBonus = Dungeon.hero.STR() - Dungeon.hero.STR;
+				if (strBonus > 0)
+					pos = statSlot(this, Messages.get(this, "str"), Dungeon.hero.STR + " + " + strBonus, pos);
+				else if (strBonus < 0)
+					pos = statSlot(this, Messages.get(this, "str"), Dungeon.hero.STR + " - " + -strBonus, pos);
+				else
+					pos = statSlot(this, Messages.get(this, "str"), Integer.toString(Dungeon.hero.STR), pos);
+				pos = statSlot(this, Messages.get(this, "duration"), num.format((int) Statistics.duration), pos);
+				if (Statistics.highestAscent == 0) {
+					pos = statSlot(this, Messages.get(this, "depth"), num.format(Statistics.deepestFloor), pos);
+				} else {
+					pos = statSlot(this, Messages.get(this, "ascent"), num.format(Statistics.highestAscent), pos);
+				}
+				if (Dungeon.seed != -1) {
+					if (Dungeon.daily) {
+						if (Dungeon.dailyReplay) {
+							pos = statSlot(this, Messages.get(this, "replay_for"), "_" + Dungeon.customSeedText + "_", pos);
+						} else {
+							pos = statSlot(this, Messages.get(this, "daily_for"), "_" + Dungeon.customSeedText + "_", pos);
+						}
+					} else if (!Dungeon.customSeedText.isEmpty()) {
+						pos = statSlot(this, Messages.get(this, "custom_seed"), "_" + Dungeon.customSeedText + "_", pos);
+					} else {
+						pos = statSlot(this, Messages.get(this, "seed"), DungeonSeed.convertToCode(Dungeon.seed), pos);
+					}
+				} else {
+					pos += GAP + 5;
+				}
 
-				btnTalents.setPos(left, btnTalents.top());
-				btnChallenges.setPos(btnTalents.right() + left, btnTalents.top());
+				pos += GAP;
+
+				pos = statSlot(this, Messages.get(this, "enemies"), num.format(Statistics.enemiesSlain), pos);
+				pos = statSlot(this, Messages.get(this, "gold"), num.format(Statistics.goldCollected), pos);
+				pos = statSlot(this, Messages.get(this, "food"), num.format(Statistics.foodEaten), pos);
+				pos = statSlot(this, Messages.get(this, "alchemy"), num.format(Statistics.itemsCrafted), pos);
 			}
 
-			pos += GAP;
+			int buttontop = HEIGHT - 16;
 
-			int strBonus = Dungeon.hero.STR() - Dungeon.hero.STR;
-			if (strBonus > 0)       pos = statSlot(this, Messages.get(this, "str"), Dungeon.hero.STR + " + " + strBonus, pos);
-			else if (strBonus < 0)  pos = statSlot(this, Messages.get(this, "str"), Dungeon.hero.STR + " - " + -strBonus, pos );
-			else                    pos = statSlot(this, Messages.get(this, "str"), Integer.toString(Dungeon.hero.STR), pos);
-			pos = statSlot( this, Messages.get(this, "health"), Integer.toString( Dungeon.hero.HT ), pos );
-			
-			pos += GAP;
-			
-			pos = statSlot( this, Messages.get(this, "duration"), Integer.toString( (int)Statistics.duration ), pos );
-			
-			pos += GAP;
-			
-			pos = statSlot( this, Messages.get(this, "depth"), Integer.toString( Statistics.deepestFloor ), pos );
-			pos = statSlot( this, Messages.get(this, "enemies"), Integer.toString( Statistics.enemiesSlain ), pos );
-			pos = statSlot( this, Messages.get(this, "gold"), Integer.toString( Statistics.goldCollected ), pos );
-			
-			pos += GAP;
-			
-			pos = statSlot( this, Messages.get(this, "food"), Integer.toString( Statistics.foodEaten ), pos );
-			pos = statSlot( this, Messages.get(this, "alchemy"), Integer.toString( Statistics.itemsCrafted ), pos );
-			pos = statSlot( this, Messages.get(this, "ankhs"), Integer.toString( Statistics.ankhsUsed ), pos );
+			if (Dungeon.hero != null && Dungeon.seed != -1 && !Dungeon.daily &&
+					(DeviceCompat.isDebug() || Badges.isUnlocked(Badges.Badge.VICTORY))){
+				final Image icon = Icons.get(Icons.SEED);
+				RedButton btnSeed = new RedButton(Messages.get(this, "copy_seed")){
+					@Override
+					protected void onClick() {
+						super.onClick();
+						ShatteredPixelDungeon.scene().addToFront(new WndOptions(new Image(icon),
+								Messages.get(WndRanking.StatsTab.this, "copy_seed"),
+								Messages.get(WndRanking.StatsTab.this, "copy_seed_desc"),
+								Messages.get(WndRanking.StatsTab.this, "copy_seed_copy"),
+								Messages.get(WndRanking.StatsTab.this, "copy_seed_cancel")){
+							@Override
+							protected void onSelect(int index) {
+								super.onSelect(index);
+								if (index == 0){
+									SPDSettings.customSeed(DungeonSeed.convertToCode(Dungeon.seed));
+									icon.hardlight(1f, 1.5f, 0.67f);
+								}
+							}
+						});
+					}
+				};
+				if (DungeonSeed.convertFromText(SPDSettings.customSeed()) == Dungeon.seed){
+					icon.hardlight(1f, 1.5f, 0.67f);
+				}
+				btnSeed.icon(icon);
+				btnSeed.setRect(0, buttontop, 115, 16);
+				add(btnSeed);
+			}
+
 		}
 		
 		private float statSlot( Group parent, String label, String value, float pos ) {
@@ -255,14 +300,39 @@ public class WndRanking extends WndTabbed {
 			parent.add( txt );
 			
 			txt = PixelScene.renderTextBlock( value, 7 );
-			txt.setPos(WIDTH * 0.7f, pos);
+			txt.setPos(WIDTH * 0.6f, pos);
 			PixelScene.align(txt);
 			parent.add( txt );
 			
 			return pos + GAP + txt.height();
 		}
 	}
-	
+
+	private class TalentsTab extends Group{
+
+		public TalentsTab(){
+			super();
+
+			camera = WndRanking.this.camera;
+
+			int tiers = 1;
+			if (Dungeon.hero.lvl >= 6) tiers++;
+			if (Dungeon.hero.lvl >= 12 && Dungeon.hero.subClass != HeroSubClass.NONE) tiers++;
+			if (Dungeon.hero.lvl >= 20 && Dungeon.hero.armorAbility != null) tiers++;
+			while (Dungeon.hero.talents.size() > tiers){
+				Dungeon.hero.talents.remove(Dungeon.hero.talents.size()-1);
+			}
+
+			TalentsPane p = new TalentsPane(TalentButton.Mode.INFO);
+			add(p);
+			p.setPos(0, 0);
+			p.setSize(WIDTH, HEIGHT);
+			p.setPos(0, 0);
+
+		}
+
+	}
+
 	private class ItemsTab extends Group {
 		
 		private float pos;
@@ -298,7 +368,7 @@ public class WndRanking extends WndTabbed {
 
 			float slotWidth = Math.min(28, ((WIDTH - slotsActive + 1) / (float)slotsActive));
 
-			for (int i = 0; i < slotsActive; i++){
+			for (int i = 0; i < QuickSlot.SIZE; i++){
 				if (Dungeon.quickslot.isNonePlaceholder(i)){
 					QuickSlotButton slot = new QuickSlotButton(Dungeon.quickslot.getItem(i));
 
@@ -330,7 +400,7 @@ public class WndRanking extends WndTabbed {
 			camera = WndRanking.this.camera;
 
 			Component badges;
-			if (Badges.unlocked(false) <= 7){
+			if (Badges.filterReplacedBadges(false).size() <= 8){
 				badges = new BadgesList(false);
 			} else {
 				badges = new BadgesGrid(false);
@@ -338,6 +408,48 @@ public class WndRanking extends WndTabbed {
 			add(badges);
 			badges.setSize( WIDTH, HEIGHT );
 		}
+	}
+
+	private class ChallengesTab extends Group{
+
+		public ChallengesTab(){
+			super();
+
+			camera = WndRanking.this.camera;
+
+			float pos = 0;
+
+			for (int i=0; i < Challenges.NAME_IDS.length; i++) {
+
+				final String challenge = Challenges.NAME_IDS[i];
+
+				CheckBox cb = new CheckBox( Messages.titleCase(Messages.get(Challenges.class, challenge)) );
+				cb.checked( (Dungeon.challenges & Challenges.MASKS[i]) != 0 );
+				cb.active = false;
+
+				if (i > 0) {
+					pos += 1;
+				}
+				cb.setRect( 0, pos, WIDTH-16, 15 );
+
+				add( cb );
+
+				IconButton info = new IconButton(Icons.get(Icons.INFO)){
+					@Override
+					protected void onClick() {
+						super.onClick();
+						ShatteredPixelDungeon.scene().add(
+								new WndMessage(Messages.get(Challenges.class, challenge+"_desc"))
+						);
+					}
+				};
+				info.setRect(cb.right(), pos, 16, 15);
+				add(info);
+
+				pos = cb.bottom();
+			}
+		}
+
 	}
 
 	private class ItemButton extends Button {

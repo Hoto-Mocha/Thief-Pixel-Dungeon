@@ -3,7 +3,7 @@
  * Copyright (C) 2012-2015 Oleg Dolya
  *
  * Shattered Pixel Dungeon
- * Copyright (C) 2014-2022 Evan Debenham
+ * Copyright (C) 2014-2023 Evan Debenham
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -41,10 +41,13 @@ public class Entanglement extends Glyph {
 	public int proc(Armor armor, Char attacker, final Char defender, final int damage ) {
 
 		final int level = Math.max( 0, armor.buffedLvl() );
-		
-		if (Random.Int( 4 ) == 0) {
-			
-			Buff.affect( defender, Earthroot.Armor.class ).level( 5 + 2 * level );
+		float procChance = 1/4f * procChanceMultiplier(defender);
+
+		if (Random.Float() < procChance) {
+
+			float powerMulti = Math.max(1f, procChance);
+
+			Buff.affect( defender, Earthroot.Armor.class ).level( Math.round((5 + 2 * level)*powerMulti) );
 			CellEmitter.bottom( defender.pos ).start( EarthParticle.FACTORY, 0.05f, 8 );
 			Camera.main.shake( 1, 0.4f );
 			

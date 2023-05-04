@@ -3,7 +3,7 @@
  * Copyright (C) 2012-2015 Oleg Dolya
  *
  * Shattered Pixel Dungeon
- * Copyright (C) 2014-2022 Evan Debenham
+ * Copyright (C) 2014-2023 Evan Debenham
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -25,6 +25,7 @@ import com.shatteredpixel.shatteredpixeldungeon.actors.Char;
 import com.shatteredpixel.shatteredpixeldungeon.effects.particles.SnowParticle;
 import com.shatteredpixel.shatteredpixeldungeon.messages.Messages;
 import com.shatteredpixel.shatteredpixeldungeon.ui.BuffIndicator;
+import com.watabou.noosa.Image;
 
 public class FrostImbue extends FlavourBuff {
 	
@@ -42,22 +43,17 @@ public class FrostImbue extends FlavourBuff {
 	
 	@Override
 	public int icon() {
-		return BuffIndicator.FROST;
+		return BuffIndicator.IMBUE;
+	}
+
+	@Override
+	public void tintIcon(Image icon) {
+		icon.hardlight(0, 2f, 3f);
 	}
 
 	@Override
 	public float iconFadePercent() {
 		return Math.max(0, (DURATION - visualcooldown()) / DURATION);
-	}
-	
-	@Override
-	public String toString() {
-		return Messages.get(this, "name");
-	}
-	
-	@Override
-	public String desc() {
-		return Messages.get(this, "desc", dispTurns());
 	}
 	
 	{

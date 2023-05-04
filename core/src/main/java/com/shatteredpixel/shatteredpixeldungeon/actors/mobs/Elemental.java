@@ -3,7 +3,7 @@
  * Copyright (C) 2012-2015 Oleg Dolya
  *
  * Shattered Pixel Dungeon
- * Copyright (C) 2014-2022 Evan Debenham
+ * Copyright (C) 2014-2023 Evan Debenham
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -23,12 +23,14 @@ package com.shatteredpixel.shatteredpixeldungeon.actors.mobs;
 
 import com.shatteredpixel.shatteredpixeldungeon.Assets;
 import com.shatteredpixel.shatteredpixeldungeon.Dungeon;
+import com.shatteredpixel.shatteredpixeldungeon.Statistics;
 import com.shatteredpixel.shatteredpixeldungeon.actors.Char;
 import com.shatteredpixel.shatteredpixeldungeon.actors.blobs.Freezing;
 import com.shatteredpixel.shatteredpixeldungeon.actors.buffs.Blindness;
 import com.shatteredpixel.shatteredpixeldungeon.actors.buffs.Buff;
 import com.shatteredpixel.shatteredpixeldungeon.actors.buffs.Burning;
 import com.shatteredpixel.shatteredpixeldungeon.actors.buffs.Chill;
+import com.shatteredpixel.shatteredpixeldungeon.actors.buffs.Invisibility;
 import com.shatteredpixel.shatteredpixeldungeon.effects.Lightning;
 import com.shatteredpixel.shatteredpixeldungeon.effects.Splash;
 import com.shatteredpixel.shatteredpixeldungeon.items.potions.PotionOfFrost;
@@ -39,9 +41,11 @@ import com.shatteredpixel.shatteredpixeldungeon.items.scrolls.ScrollOfTransmutat
 import com.shatteredpixel.shatteredpixeldungeon.items.wands.CursedWand;
 import com.shatteredpixel.shatteredpixeldungeon.items.weapon.enchantments.Shocking;
 import com.shatteredpixel.shatteredpixeldungeon.mechanics.Ballistica;
+import com.shatteredpixel.shatteredpixeldungeon.messages.Messages;
 import com.shatteredpixel.shatteredpixeldungeon.scenes.GameScene;
 import com.shatteredpixel.shatteredpixeldungeon.sprites.CharSprite;
 import com.shatteredpixel.shatteredpixeldungeon.sprites.ElementalSprite;
+import com.shatteredpixel.shatteredpixeldungeon.utils.GLog;
 import com.watabou.noosa.audio.Sample;
 import com.watabou.utils.Bundle;
 import com.watabou.utils.Random;
@@ -67,7 +71,7 @@ public abstract class Elemental extends Mob {
 		if (!summonedALly) {
 			return Random.NormalIntRange(20, 25);
 		} else {
-			int regionScale = Math.max(2, (1 + Dungeon.depth/5));
+			int regionScale = Math.max(2, (1 + Dungeon.scalingDepth()/5));
 			return Random.NormalIntRange(5*regionScale, 5 + 5*regionScale);
 		}
 	}
@@ -77,7 +81,7 @@ public abstract class Elemental extends Mob {
 		if (!summonedALly) {
 			return 25;
 		} else {
-			int regionScale = Math.max(2, (1 + Dungeon.depth/5));
+			int regionScale = Math.max(2, (1 + Dungeon.scalingDepth()/5));
 			return 5 + 5*regionScale;
 		}
 	}
@@ -85,14 +89,14 @@ public abstract class Elemental extends Mob {
 	public void setSummonedALly(){
 		summonedALly = true;
 		//sewers are prison are equivalent, otherwise scales as normal (2/2/3/4/5)
-		int regionScale = Math.max(2, (1 + Dungeon.depth/5));
+		int regionScale = Math.max(2, (1 + Dungeon.scalingDepth()/5));
 		defenseSkill = 5*regionScale;
 		HT = 15*regionScale;
 	}
 	
 	@Override
 	public int drRoll() {
-		return Random.NormalIntRange(0, 5);
+		return super.drRoll() + Random.NormalIntRange(0, 5);
 	}
 	
 	protected int rangedCooldown = Random.NormalIntRange( 3, 5 );
@@ -108,16 +112,18 @@ public abstract class Elemental extends Mob {
 	
 	@Override
 	protected boolean canAttack( Char enemy ) {
-		if (rangedCooldown <= 0) {
-			return new Ballistica( pos, enemy.pos, Ballistica.MAGIC_BOLT ).collisionPos == enemy.pos;
+		if (super.canAttack(enemy)){
+			return true;
 		} else {
-			return super.canAttack( enemy );
+			return rangedCooldown < 0 && new Ballistica( pos, enemy.pos, Ballistica.MAGIC_BOLT ).collisionPos == enemy.pos;
 		}
 	}
 	
 	protected boolean doAttack( Char enemy ) {
 		
-		if (Dungeon.level.adjacent( pos, enemy.pos ) || rangedCooldown > 0) {
+		if (Dungeon.level.adjacent( pos, enemy.pos )
+				|| rangedCooldown > 0
+				|| new Ballistica( pos, enemy.pos, Ballistica.MAGIC_BOLT ).collisionPos != enemy.pos) {
 			
 			return super.doAttack( enemy );
 			
@@ -143,7 +149,9 @@ public abstract class Elemental extends Mob {
 	
 	private void zap() {
 		spend( 1f );
-		
+
+		Invisibility.dispel(this);
+		Char enemy = this.enemy;
 		if (hit( this, enemy, true )) {
 			
 			rangedProc( enemy );
@@ -161,11 +169,12 @@ public abstract class Elemental extends Mob {
 	}
 	
 	@Override
-	public void add( Buff buff ) {
+	public boolean add( Buff buff ) {
 		if (harmfulBuffs.contains( buff.getClass() )) {
 			damage( Random.NormalIntRange( HT/2, HT * 3/5 ), buff );
+			return false;
 		} else {
-			super.add( buff );
+			return super.add( buff );
 		}
 	}
 	
@@ -249,7 +258,10 @@ public abstract class Elemental extends Mob {
 		@Override
 		public void die(Object cause) {
 			super.die(cause);
-			if (alignment == Alignment.ENEMY) Dungeon.level.drop( new Embers(), pos ).sprite.drop();
+			if (alignment == Alignment.ENEMY) {
+				Dungeon.level.drop( new Embers(), pos ).sprite.drop();
+				Statistics.questScores[1] = 2000;
+			}
 		}
 
 		@Override
@@ -324,7 +336,11 @@ public abstract class Elemental extends Mob {
 			}
 			
 			for (Char ch : affected) {
-				ch.damage( Math.round( damage * 0.4f ), this );
+				ch.damage( Math.round( damage * 0.4f ), Shocking.class );
+				if (ch == Dungeon.hero && !ch.isAlive()){
+					Dungeon.fail(getClass());
+					GLog.n( Messages.capitalize(Messages.get(Char.class, "kill", name())) );
+				}
 			}
 
 			boolean visible = sprite.visible || enemy.sprite.visible;

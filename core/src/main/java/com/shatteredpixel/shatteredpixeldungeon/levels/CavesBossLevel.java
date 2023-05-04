@@ -3,7 +3,7 @@
  * Copyright (C) 2012-2015 Oleg Dolya
  *
  * Shattered Pixel Dungeon
- * Copyright (C) 2014-2022 Evan Debenham
+ * Copyright (C) 2014-2023 Evan Debenham
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -25,6 +25,7 @@ import com.shatteredpixel.shatteredpixeldungeon.Assets;
 import com.shatteredpixel.shatteredpixeldungeon.Bones;
 import com.shatteredpixel.shatteredpixeldungeon.Challenges;
 import com.shatteredpixel.shatteredpixeldungeon.Dungeon;
+import com.shatteredpixel.shatteredpixeldungeon.Statistics;
 import com.shatteredpixel.shatteredpixeldungeon.actors.Actor;
 import com.shatteredpixel.shatteredpixeldungeon.actors.Char;
 import com.shatteredpixel.shatteredpixeldungeon.actors.blobs.Blob;
@@ -39,11 +40,13 @@ import com.shatteredpixel.shatteredpixeldungeon.effects.particles.BlastParticle;
 import com.shatteredpixel.shatteredpixeldungeon.effects.particles.SparkParticle;
 import com.shatteredpixel.shatteredpixeldungeon.items.Heap;
 import com.shatteredpixel.shatteredpixeldungeon.items.Item;
+import com.shatteredpixel.shatteredpixeldungeon.levels.features.LevelTransition;
 import com.shatteredpixel.shatteredpixeldungeon.levels.painters.CavesPainter;
 import com.shatteredpixel.shatteredpixeldungeon.levels.painters.Painter;
 import com.shatteredpixel.shatteredpixeldungeon.messages.Messages;
 import com.shatteredpixel.shatteredpixeldungeon.scenes.GameScene;
 import com.shatteredpixel.shatteredpixeldungeon.sprites.CharSprite;
+import com.shatteredpixel.shatteredpixeldungeon.sprites.PylonSprite;
 import com.shatteredpixel.shatteredpixeldungeon.tiles.CustomTilemap;
 import com.shatteredpixel.shatteredpixeldungeon.tiles.DungeonTilemap;
 import com.shatteredpixel.shatteredpixeldungeon.utils.GLog;
@@ -99,6 +102,7 @@ public class CavesBossLevel extends Level {
 	private static int WIDTH = 33;
 	private static int HEIGHT = 42;
 
+	public static Rect diggableArea = new Rect(2, 11, 31, 40);
 	public static Rect mainArena = new Rect(5, 14, 28, 37);
 	public static Rect gate = new Rect(14, 13, 19, 14);
 	public static int[] pylonPositions = new int[]{ 4 + 13*WIDTH, 28 + 13*WIDTH, 4 + 37*WIDTH, 28 + 37*WIDTH };
@@ -148,7 +152,10 @@ public class CavesBossLevel extends Level {
 		Painter.fill(this, 16, 5, 1, 6, Terrain.EMPTY_SP);
 		Painter.fill(this, 15, 0, 3, 3, Terrain.EXIT);
 
-		exit = 16 + 2*width();
+		int exitCell = 16 + 2*width();
+		LevelTransition exit = new LevelTransition(this, exitCell, LevelTransition.Type.REGULAR_EXIT);
+		exit.set(14, 0, 18, 2);
+		transitions.add(exit);
 
 		CustomTilemap customVisuals = new CityEntrance();
 		customVisuals.setRect(0, 0, width(), 11);
@@ -169,6 +176,13 @@ public class CavesBossLevel extends Level {
 	@Override
 	public void restoreFromBundle(Bundle bundle) {
 		super.restoreFromBundle(bundle);
+
+		//pre-1.3.0 saves, modifies exit transition with custom size
+		if (bundle.contains("exit")){
+			LevelTransition exit = getTransition(LevelTransition.Type.REGULAR_EXIT);
+			exit.set(14, 0, 18, 2);
+			transitions.add(exit);
+		}
 
 		for (CustomTilemap c : customTiles){
 			if (c instanceof ArenaVisuals){
@@ -198,24 +212,28 @@ public class CavesBossLevel extends Level {
 			int pos;
 			do {
 				pos = randomRespawnCell(null);
-			} while (pos == entrance);
+			} while (pos == entrance());
 			drop( item, pos ).setHauntedIfCursed().type = Heap.Type.REMAINS;
 		}
 	}
 
 	@Override
 	public int randomRespawnCell( Char ch ) {
-		//this check is mainly here for DM-300, to prevent an infinite loop
-		if (Char.hasProp(ch, Char.Property.LARGE) && map[entrance] != Terrain.ENTRANCE){
-			return -1;
+		ArrayList<Integer> candidates = new ArrayList<>();
+		for (int i : PathFinder.NEIGHBOURS8){
+			int cell = entrance() + i;
+			if (passable[cell]
+					&& Actor.findChar(cell) == null
+					&& (!Char.hasProp(ch, Char.Property.LARGE) || openSpace[cell])){
+				candidates.add(cell);
+			}
 		}
-		int cell;
-		do {
-			cell = entrance + PathFinder.NEIGHBOURS8[Random.Int(8)];
-		} while (!passable[cell]
-				|| (Char.hasProp(ch, Char.Property.LARGE) && !openSpace[cell])
-				|| Actor.findChar(cell) != null);
-		return cell;
+
+		if (candidates.isEmpty()){
+			return -1;
+		} else {
+			return Random.element(candidates);
+		}
 	}
 
 	@Override
@@ -231,8 +249,6 @@ public class CavesBossLevel extends Level {
 
 	@Override
 	public void occupyCell(Char ch) {
-		super.occupyCell(ch);
-
 		//seal the level when the hero moves near to a pylon, the level isn't already sealed, and the gate hasn't been destroyed
 		int gatePos = pointToCell(new Point(gate.left, gate.top));
 		if (ch == Dungeon.hero && !locked && solid[gatePos]){
@@ -243,21 +259,26 @@ public class CavesBossLevel extends Level {
 				}
 			}
 		}
+
+		super.occupyCell(ch);
 	}
 
 	@Override
 	public void seal() {
 		super.seal();
+		Statistics.qualifiedForBossChallengeBadge = true;
 
+		int entrance = entrance();
 		set( entrance, Terrain.WALL );
 
 		Heap heap = Dungeon.level.heaps.get( entrance );
-		if (heap != null) {
+		while (heap != null && !heap.isEmpty()) {
 			int n;
 			do {
-				n = entrance + PathFinder.NEIGHBOURS8[Random.Int( 8 )];
+				n = entrance + PathFinder.NEIGHBOURS8[Random.Int(8)];
 			} while (!Dungeon.level.passable[n]);
-			Dungeon.level.drop( heap.pickUp(), n ).sprite.drop( entrance );
+			Heap dropped = Dungeon.level.drop(heap.pickUp(), n);
+			dropped.seen = heap.seen;
 		}
 
 		Char ch = Actor.findChar( entrance );
@@ -299,7 +320,7 @@ public class CavesBossLevel extends Level {
 
 		blobs.get(PylonEnergy.class).fullyClear();
 
-		set( entrance, Terrain.ENTRANCE );
+		set( entrance(), Terrain.ENTRANCE );
 		int i = 14 + 13*width();
 		for (int j = 0; j < 5; j++){
 			set( i+j, Terrain.EMPTY );
@@ -477,7 +498,7 @@ public class CavesBossLevel extends Level {
 	};
 
 	private void buildEntrance(){
-		entrance = 16 + 25*width();
+		int entrance = 16 + 25*width();
 
 		//entrance area
 		int NW = entrance - 7 - 7*width();
@@ -499,6 +520,7 @@ public class CavesBossLevel extends Level {
 		}
 
 		Painter.set(this, entrance, Terrain.ENTRANCE);
+		transitions.add(new LevelTransition(this, entrance, LevelTransition.Type.REGULAR_ENTRANCE));
 	}
 
 	private static short[] corner1 = {
@@ -789,14 +811,21 @@ public class CavesBossLevel extends Level {
 					if (off[cell] > 0){
 
 						Char ch = Actor.findChar(cell);
-						if (ch != null && !(ch instanceof DM300)) {
+						if (ch != null && !(ch instanceof DM300) && !ch.flying) {
 							Sample.INSTANCE.play( Assets.Sounds.LIGHTNING );
 							ch.damage( Random.NormalIntRange(6, 12), Electricity.class);
 							ch.sprite.flash();
 
-							if (ch == Dungeon.hero && !ch.isAlive()) {
-								Dungeon.fail(DM300.class);
-								GLog.n( Messages.get(Electricity.class, "ondeath") );
+							if (ch == Dungeon.hero){
+								if (energySourceSprite != null && energySourceSprite instanceof PylonSprite){
+									//took damage while DM-300 was supercharged
+									Statistics.qualifiedForBossChallengeBadge = false;
+								}
+								Statistics.bossScores[2] -= 200;
+								if ( !ch.isAlive()) {
+									Dungeon.fail(DM300.class);
+									GLog.n(Messages.get(Electricity.class, "ondeath"));
+								}
 							}
 						}
 					}

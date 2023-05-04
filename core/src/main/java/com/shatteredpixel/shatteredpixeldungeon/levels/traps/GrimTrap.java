@@ -3,7 +3,7 @@
  * Copyright (C) 2012-2015 Oleg Dolya
  *
  * Shattered Pixel Dungeon
- * Copyright (C) 2014-2022 Evan Debenham
+ * Copyright (C) 2014-2023 Evan Debenham
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -22,6 +22,7 @@
 package com.shatteredpixel.shatteredpixeldungeon.levels.traps;
 
 import com.shatteredpixel.shatteredpixeldungeon.Assets;
+import com.shatteredpixel.shatteredpixeldungeon.Badges;
 import com.shatteredpixel.shatteredpixeldungeon.Dungeon;
 import com.shatteredpixel.shatteredpixeldungeon.actors.Actor;
 import com.shatteredpixel.shatteredpixeldungeon.actors.Char;
@@ -68,12 +69,12 @@ public class GrimTrap extends Trap {
 			final GrimTrap trap = this;
 			int damage;
 			
-			//almost kill the player
-			if (finalTarget == Dungeon.hero && ((float)finalTarget.HP/finalTarget.HT) >= 0.9f){
-				damage = finalTarget.HP-1;
-			//kill 'em
-			} else {
-				damage = finalTarget.HP;
+			//instant kill, use a mix of current HP and max HP, just like psi blast (for resistances)
+			damage = Math.round(finalTarget.HT/2f + finalTarget.HP/2f);
+
+			//can't do more than 90% HT for the hero specifically
+			if (finalTarget == Dungeon.hero){
+				damage = (int)Math.min(damage, finalTarget.HT*0.9f);
 			}
 			
 			final int finalDmg = damage;
@@ -99,6 +100,7 @@ public class GrimTrap extends Trap {
 									if (finalTarget == Dungeon.hero) {
 										Sample.INSTANCE.play(Assets.Sounds.CURSED);
 										if (!finalTarget.isAlive()) {
+											Badges.validateDeathFromGrimOrDisintTrap();
 											Dungeon.fail( GrimTrap.class );
 											GLog.n( Messages.get(GrimTrap.class, "ondeath") );
 										}

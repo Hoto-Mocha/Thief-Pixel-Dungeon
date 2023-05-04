@@ -3,7 +3,7 @@
  * Copyright (C) 2012-2015 Oleg Dolya
  *
  * Shattered Pixel Dungeon
- * Copyright (C) 2014-2022 Evan Debenham
+ * Copyright (C) 2014-2023 Evan Debenham
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -343,6 +343,9 @@ public class DungeonTileSheet {
 
 	public static final int HIGH_GRASS_OVERHANG_ALT     = WALL_OVERHANG+38;
 	public static final int FURROWED_OVERHANG_ALT       = WALL_OVERHANG+39;
+
+	//exit visuals are rendered flat atm, so they actually underhand
+	public static final int EXIT_UNDERHANG              = WALL_OVERHANG+41;
 
 	/**********************************************************************
 	 * Logic for the selection of tile visuals

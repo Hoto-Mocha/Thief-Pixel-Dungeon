@@ -3,7 +3,7 @@
  * Copyright (C) 2012-2015 Oleg Dolya
  *
  * Shattered Pixel Dungeon
- * Copyright (C) 2014-2022 Evan Debenham
+ * Copyright (C) 2014-2023 Evan Debenham
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -31,7 +31,7 @@ public class Bestiary {
 	public static ArrayList<Class<? extends Mob>> getMobRotation( int depth ){
 		ArrayList<Class<? extends Mob>> mobs = standardMobRotation( depth );
 		addRareMobs(depth, mobs);
-		//swapMobAlts(mobs);
+		swapMobAlts(mobs);
 		Random.shuffle(mobs);
 		return mobs;
 	}
@@ -113,8 +113,8 @@ public class Bestiary {
 					cl = Albino.class;
 				} else if (cl == Slime.class) {
 					cl = CausticSlime.class;
-				} else if (cl == Thief.class) {
-					cl = Bandit.class;
+				/*} else if (cl == Thief.class) {
+					cl = Bandit.class;*/
 				} else if (cl == Necromancer.class){
 					cl = SpectralNecromancer.class;
 				} else if (cl == Brute.class) {

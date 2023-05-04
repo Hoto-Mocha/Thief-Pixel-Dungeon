@@ -3,7 +3,7 @@
  * Copyright (C) 2012-2015 Oleg Dolya
  *
  * Shattered Pixel Dungeon
- * Copyright (C) 2014-2022 Evan Debenham
+ * Copyright (C) 2014-2023 Evan Debenham
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -57,11 +57,6 @@ public class RevealedArea extends FlavourBuff{
 	public float iconFadePercent() {
 		float max = 5*Dungeon.hero.pointsInTalent(Talent.SEER_SHOT);
 		return Math.max(0, (max-visualcooldown()) / max);
-	}
-
-	@Override
-	public String toString() {
-		return Messages.get(this, "name");
 	}
 
 	@Override

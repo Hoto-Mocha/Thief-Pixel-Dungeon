@@ -3,7 +3,7 @@
  * Copyright (C) 2012-2015 Oleg Dolya
  *
  * Shattered Pixel Dungeon
- * Copyright (C) 2014-2022 Evan Debenham
+ * Copyright (C) 2014-2023 Evan Debenham
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -26,15 +26,19 @@ import com.shatteredpixel.shatteredpixeldungeon.Dungeon;
 import com.shatteredpixel.shatteredpixeldungeon.actors.Char;
 import com.shatteredpixel.shatteredpixeldungeon.actors.buffs.Berserk;
 import com.shatteredpixel.shatteredpixeldungeon.actors.buffs.MagicImmune;
+import com.shatteredpixel.shatteredpixeldungeon.actors.buffs.MonkEnergy;
 import com.shatteredpixel.shatteredpixeldungeon.actors.hero.Hero;
 import com.shatteredpixel.shatteredpixeldungeon.actors.hero.Talent;
+import com.shatteredpixel.shatteredpixeldungeon.actors.hero.abilities.duelist.ElementalStrike;
 import com.shatteredpixel.shatteredpixeldungeon.items.Item;
 import com.shatteredpixel.shatteredpixeldungeon.items.KindOfWeapon;
+import com.shatteredpixel.shatteredpixeldungeon.items.rings.RingOfArcana;
+import com.shatteredpixel.shatteredpixeldungeon.items.rings.RingOfForce;
 import com.shatteredpixel.shatteredpixeldungeon.items.rings.RingOfFuror;
 import com.shatteredpixel.shatteredpixeldungeon.items.weapon.curses.Annoying;
 import com.shatteredpixel.shatteredpixeldungeon.items.weapon.curses.Displacing;
-import com.shatteredpixel.shatteredpixeldungeon.items.weapon.curses.Exhausting;
-import com.shatteredpixel.shatteredpixeldungeon.items.weapon.curses.Fragile;
+import com.shatteredpixel.shatteredpixeldungeon.items.weapon.curses.Dazzling;
+import com.shatteredpixel.shatteredpixeldungeon.items.weapon.curses.Explosive;
 import com.shatteredpixel.shatteredpixeldungeon.items.weapon.curses.Friendly;
 import com.shatteredpixel.shatteredpixeldungeon.items.weapon.curses.Polarized;
 import com.shatteredpixel.shatteredpixeldungeon.items.weapon.curses.Sacrificial;
@@ -52,6 +56,8 @@ import com.shatteredpixel.shatteredpixeldungeon.items.weapon.enchantments.Projec
 import com.shatteredpixel.shatteredpixeldungeon.items.weapon.enchantments.Shocking;
 import com.shatteredpixel.shatteredpixeldungeon.items.weapon.enchantments.Unstable;
 import com.shatteredpixel.shatteredpixeldungeon.items.weapon.enchantments.Vampiric;
+import com.shatteredpixel.shatteredpixeldungeon.items.weapon.melee.RunicBlade;
+import com.shatteredpixel.shatteredpixeldungeon.items.weapon.melee.Scimitar;
 import com.shatteredpixel.shatteredpixeldungeon.messages.Messages;
 import com.shatteredpixel.shatteredpixeldungeon.sprites.ItemSprite;
 import com.shatteredpixel.shatteredpixeldungeon.utils.GLog;
@@ -168,7 +174,7 @@ abstract public class Weapon extends KindOfWeapon {
 	}
 	
 	@Override
-	public float accuracyFactor( Char owner ) {
+	public float accuracyFactor(Char owner, Char target) {
 		
 		int encumbrance = 0;
 		
@@ -176,10 +182,11 @@ abstract public class Weapon extends KindOfWeapon {
 			encumbrance = STRReq() - ((Hero)owner).STR();
 		}
 
-		if (hasEnchant(Wayward.class, owner))
-			encumbrance = Math.max(2, encumbrance+2);
-
 		float ACC = this.ACC;
+
+		if (owner.buff(Wayward.WaywardBuff.class) != null && enchantment instanceof Wayward){
+			ACC /= 5;
+		}
 
 		return encumbrance > 0 ? (float)(ACC / Math.pow( 1.5, encumbrance )) : ACC;
 	}
@@ -202,12 +209,29 @@ abstract public class Weapon extends KindOfWeapon {
 	}
 
 	protected float speedMultiplier(Char owner ){
-		return RingOfFuror.attackSpeedMultiplier(owner);
+		float multi = RingOfFuror.attackSpeedMultiplier(owner);
+
+		if (owner.buff(Scimitar.SwordDance.class) != null){
+			multi += 0.6f;
+		}
+
+		return multi;
 	}
 
 	@Override
 	public int reachFactor(Char owner) {
-		return hasEnchant(Projecting.class, owner) ? RCH+1 : RCH;
+		int reach = RCH;
+		if (owner instanceof Hero && RingOfForce.fightingUnarmed((Hero) owner)){
+			reach = 1; //brawlers stance benefits from enchantments, but not innate reach
+			if (!RingOfForce.unarmedGetsWeaponEnchantment((Hero) owner)){
+				return reach;
+			}
+		}
+		if (hasEnchant(Projecting.class, owner)){
+			return reach + Math.round(enchantment.procChanceMultiplier(owner));
+		} else {
+			return reach;
+		}
 	}
 
 	public int STRReq(){
@@ -264,7 +288,7 @@ abstract public class Weapon extends KindOfWeapon {
 		}
 		
 		cursed = false;
-		
+
 		return super.upgrade();
 	}
 	
@@ -352,7 +376,7 @@ abstract public class Weapon extends KindOfWeapon {
 		};
 		
 		private static final Class<?>[] curses = new Class<?>[]{
-				Annoying.class, Displacing.class, Exhausting.class, Fragile.class,
+				Annoying.class, Displacing.class, Dazzling.class, Explosive.class,
 				Sacrificial.class, Wayward.class, Polarized.class, Friendly.class
 		};
 		
@@ -360,13 +384,26 @@ abstract public class Weapon extends KindOfWeapon {
 		public abstract int proc( Weapon weapon, Char attacker, Char defender, int damage );
 
 		protected float procChanceMultiplier( Char attacker ){
-			float multi = 1f;
-			if (attacker instanceof Hero && ((Hero) attacker).hasTalent(Talent.ENRAGED_CATALYST)){
-				Berserk rage = attacker.buff(Berserk.class);
-				if (rage != null) {
-					multi += (rage.rageAmount() * 0.15f) * ((Hero) attacker).pointsInTalent(Talent.ENRAGED_CATALYST);
-				}
+			return genericProcChanceMultiplier( attacker );
+		}
+
+		public static float genericProcChanceMultiplier( Char attacker ){
+			float multi = RingOfArcana.enchantPowerMultiplier(attacker);
+			Berserk rage = attacker.buff(Berserk.class);
+			if (rage != null) {
+				multi = rage.enchantFactor(multi);
 			}
+
+			if (attacker.buff(RunicBlade.RunicSlashTracker.class) != null){
+				multi += 2.5f;
+				attacker.buff(RunicBlade.RunicSlashTracker.class).detach();
+			}
+
+			if (attacker.buff(ElementalStrike.DirectedPowerTracker.class) != null){
+				multi += attacker.buff(ElementalStrike.DirectedPowerTracker.class).enchBoost;
+				attacker.buff(ElementalStrike.DirectedPowerTracker.class).detach();
+			}
+
 			if (attacker.buff(Talent.SpiritBladesTracker.class) != null
 					&& ((Hero)attacker).pointsInTalent(Talent.SPIRIT_BLADES) == 4){
 				multi += 0.1f;
@@ -375,6 +412,11 @@ abstract public class Weapon extends KindOfWeapon {
 					&& ((Hero)attacker).pointsInTalent(Talent.STRIKING_WAVE) == 4){
 				multi += 0.2f;
 			}
+
+			if (attacker.buff(MonkEnergy.MonkAbility.FlurryEmpowerTracker.class) != null){
+				multi *= 0.75f;
+			}
+
 			return multi;
 		}
 

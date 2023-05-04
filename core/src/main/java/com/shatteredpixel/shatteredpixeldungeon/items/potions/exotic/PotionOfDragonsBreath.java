@@ -3,7 +3,7 @@
  * Copyright (C) 2012-2015 Oleg Dolya
  *
  * Shattered Pixel Dungeon
- * Copyright (C) 2014-2022 Evan Debenham
+ * Copyright (C) 2014-2023 Evan Debenham
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -23,6 +23,7 @@ package com.shatteredpixel.shatteredpixeldungeon.items.potions.exotic;
 
 import com.shatteredpixel.shatteredpixeldungeon.Assets;
 import com.shatteredpixel.shatteredpixeldungeon.Dungeon;
+import com.shatteredpixel.shatteredpixeldungeon.ShatteredPixelDungeon;
 import com.shatteredpixel.shatteredpixeldungeon.actors.Actor;
 import com.shatteredpixel.shatteredpixeldungeon.actors.Char;
 import com.shatteredpixel.shatteredpixeldungeon.actors.blobs.Blob;
@@ -90,26 +91,31 @@ public class PotionOfDragonsBreath extends ExoticPotion {
 
 			if (cell == null && identifiedByUse){
 				showingWindow = true;
-				GameScene.show( new WndOptions(new ItemSprite(PotionOfDragonsBreath.this),
-						Messages.titleCase(name()),
-						Messages.get(ExoticPotion.class, "warning"),
-						Messages.get(ExoticPotion.class, "yes"),
-						Messages.get(ExoticPotion.class, "no") ) {
+				ShatteredPixelDungeon.runOnRenderThread(new Callback() {
 					@Override
-					protected void onSelect( int index ) {
-						showingWindow = false;
-						switch (index) {
-							case 0:
-								curUser.spendAndNext(1f);
-								identifiedByUse = false;
-								break;
-							case 1:
-								GameScene.selectCell( targeter );
-								break;
-						}
+					public void call() {
+						GameScene.show( new WndOptions(new ItemSprite(PotionOfDragonsBreath.this),
+								Messages.titleCase(name()),
+								Messages.get(ExoticPotion.class, "warning"),
+								Messages.get(ExoticPotion.class, "yes"),
+								Messages.get(ExoticPotion.class, "no") ) {
+							@Override
+							protected void onSelect( int index ) {
+								showingWindow = false;
+								switch (index) {
+									case 0:
+										curUser.spendAndNext(1f);
+										identifiedByUse = false;
+										break;
+									case 1:
+										GameScene.selectCell( targeter );
+										break;
+								}
+							}
+							public void onBackPressed() {}
+						} );
 					}
-					public void onBackPressed() {}
-				} );
+				});
 			} else if (cell == null && !anonymous){
 				curItem.collect( curUser.belongings.backpack );
 			} else if (cell != null) {

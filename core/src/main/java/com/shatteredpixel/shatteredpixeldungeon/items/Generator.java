@@ -3,7 +3,7 @@
  * Copyright (C) 2012-2015 Oleg Dolya
  *
  * Shattered Pixel Dungeon
- * Copyright (C) 2014-2022 Evan Debenham
+ * Copyright (C) 2014-2023 Evan Debenham
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -24,10 +24,15 @@ package com.shatteredpixel.shatteredpixeldungeon.items;
 import com.shatteredpixel.shatteredpixeldungeon.Dungeon;
 import com.shatteredpixel.shatteredpixeldungeon.items.armor.Armor;
 import com.shatteredpixel.shatteredpixeldungeon.items.armor.ClothArmor;
+import com.shatteredpixel.shatteredpixeldungeon.items.armor.DuelistArmor;
+import com.shatteredpixel.shatteredpixeldungeon.items.armor.HuntressArmor;
 import com.shatteredpixel.shatteredpixeldungeon.items.armor.LeatherArmor;
+import com.shatteredpixel.shatteredpixeldungeon.items.armor.MageArmor;
 import com.shatteredpixel.shatteredpixeldungeon.items.armor.MailArmor;
 import com.shatteredpixel.shatteredpixeldungeon.items.armor.PlateArmor;
+import com.shatteredpixel.shatteredpixeldungeon.items.armor.RogueArmor;
 import com.shatteredpixel.shatteredpixeldungeon.items.armor.ScaleArmor;
+import com.shatteredpixel.shatteredpixeldungeon.items.armor.WarriorArmor;
 import com.shatteredpixel.shatteredpixeldungeon.items.artifacts.AlchemistsToolkit;
 import com.shatteredpixel.shatteredpixeldungeon.items.artifacts.Artifact;
 import com.shatteredpixel.shatteredpixeldungeon.items.artifacts.CapeOfThorns;
@@ -60,6 +65,7 @@ import com.shatteredpixel.shatteredpixeldungeon.items.potions.PotionOfStrength;
 import com.shatteredpixel.shatteredpixeldungeon.items.potions.PotionOfToxicGas;
 import com.shatteredpixel.shatteredpixeldungeon.items.rings.Ring;
 import com.shatteredpixel.shatteredpixeldungeon.items.rings.RingOfAccuracy;
+import com.shatteredpixel.shatteredpixeldungeon.items.rings.RingOfArcana;
 import com.shatteredpixel.shatteredpixeldungeon.items.rings.RingOfElements;
 import com.shatteredpixel.shatteredpixeldungeon.items.rings.RingOfEnergy;
 import com.shatteredpixel.shatteredpixeldungeon.items.rings.RingOfEvasion;
@@ -128,6 +134,7 @@ import com.shatteredpixel.shatteredpixeldungeon.items.weapon.melee.Mace;
 import com.shatteredpixel.shatteredpixeldungeon.items.weapon.melee.MagesStaff;
 import com.shatteredpixel.shatteredpixeldungeon.items.weapon.melee.MeleeWeapon;
 import com.shatteredpixel.shatteredpixeldungeon.items.weapon.melee.Quarterstaff;
+import com.shatteredpixel.shatteredpixeldungeon.items.weapon.melee.Rapier;
 import com.shatteredpixel.shatteredpixeldungeon.items.weapon.melee.RoundShield;
 import com.shatteredpixel.shatteredpixeldungeon.items.weapon.melee.RunicBlade;
 import com.shatteredpixel.shatteredpixeldungeon.items.weapon.melee.Sai;
@@ -150,11 +157,12 @@ import com.shatteredpixel.shatteredpixeldungeon.items.weapon.missiles.ThrowingCl
 import com.shatteredpixel.shatteredpixeldungeon.items.weapon.missiles.ThrowingHammer;
 import com.shatteredpixel.shatteredpixeldungeon.items.weapon.missiles.ThrowingKnife;
 import com.shatteredpixel.shatteredpixeldungeon.items.weapon.missiles.ThrowingSpear;
+import com.shatteredpixel.shatteredpixeldungeon.items.weapon.missiles.ThrowingSpike;
 import com.shatteredpixel.shatteredpixeldungeon.items.weapon.missiles.ThrowingStone;
 import com.shatteredpixel.shatteredpixeldungeon.items.weapon.missiles.Tomahawk;
 import com.shatteredpixel.shatteredpixeldungeon.items.weapon.missiles.Trident;
 import com.shatteredpixel.shatteredpixeldungeon.plants.Blindweed;
-import com.shatteredpixel.shatteredpixeldungeon.plants.Dreamfoil;
+import com.shatteredpixel.shatteredpixeldungeon.plants.Mageroyal;
 import com.shatteredpixel.shatteredpixeldungeon.plants.Earthroot;
 import com.shatteredpixel.shatteredpixeldungeon.plants.Fadeleaf;
 import com.shatteredpixel.shatteredpixeldungeon.plants.Firebloom;
@@ -215,9 +223,14 @@ public class Generator {
 		//Artifacts in particular don't reset, no duplicates!
 		public float[] probs;
 		public float[] defaultProbs = null;
+		//These variables are used as a part of the deck system, to ensure that drops are consistent
+		// regardless of when they occur (either as part of seeded levelgen, or random item drops)
+		public Long seed = null;
+		public int dropped = 0;
 
 		//game has two decks of 35 items for overall category probs
 		//one deck has a ring and extra armor, the other has an artifact and extra thrown weapon
+		//Note that pure random drops only happen as part of levelgen atm, so no seed is needed here
 		public float firstProb;
 		public float secondProb;
 		public Class<? extends Item> superClass;
@@ -271,7 +284,7 @@ public class Generator {
 					Blindweed.Seed.class,
 					Stormvine.Seed.class,
 					Earthroot.Seed.class,
-					Dreamfoil.Seed.class,
+					Mageroyal.Seed.class,
 					Starflower.Seed.class};
 			SEED.defaultProbs = new float[]{ 0, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 2 };
 			SEED.probs = SEED.defaultProbs.clone();
@@ -332,11 +345,12 @@ public class Generator {
 			
 			WEP_T1.classes = new Class<?>[]{
 					WornShortsword.class,
-					Gloves.class,
+					MagesStaff.class,
 					Dagger.class,
-					MagesStaff.class
+					Gloves.class,
+					Rapier.class
 			};
-			WEP_T1.probs = new float[]{ 1, 1, 1, 0 };
+			WEP_T1.probs = new float[]{ 1, 0, 1, 1, 1 };
 			
 			WEP_T2.classes = new Class<?>[]{
 					Shortsword.class,
@@ -383,8 +397,14 @@ public class Generator {
 					LeatherArmor.class,
 					MailArmor.class,
 					ScaleArmor.class,
-					PlateArmor.class };
-			ARMOR.probs = new float[]{ 0, 0, 0, 0, 0 };
+					PlateArmor.class,
+					WarriorArmor.class,
+					MageArmor.class,
+					RogueArmor.class,
+					HuntressArmor.class,
+					DuelistArmor.class
+			};
+			ARMOR.probs = new float[]{ 1, 1, 1, 1, 1, 0, 0, 0, 0, 0 };
 			
 			//see Generator.randomMissile
 			MISSILE.classes = new Class<?>[]{};
@@ -392,7 +412,8 @@ public class Generator {
 			
 			MIS_T1.classes = new Class<?>[]{
 					ThrowingStone.class,
-					ThrowingKnife.class
+					ThrowingKnife.class,
+					ThrowingSpike.class
 			};
 			MIS_T1.probs = new float[]{ 6, 5 };
 			
@@ -432,34 +453,33 @@ public class Generator {
 			
 			RING.classes = new Class<?>[]{
 					RingOfAccuracy.class,
-					RingOfEvasion.class,
+					RingOfArcana.class,
 					RingOfElements.class,
+					RingOfEnergy.class,
+					RingOfEvasion.class,
 					RingOfForce.class,
 					RingOfFuror.class,
 					RingOfHaste.class,
-					RingOfEnergy.class,
 					RingOfMight.class,
 					RingOfSharpshooting.class,
 					RingOfTenacity.class,
 					RingOfWealth.class};
-			RING.probs = new float[]{ 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1 };
+			RING.probs = new float[]{ 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1 };
 			
 			ARTIFACT.classes = new Class<?>[]{
-					CapeOfThorns.class,
+					AlchemistsToolkit.class,
 					ChaliceOfBlood.class,
 					CloakOfShadows.class,
+					DriedRose.class,
+					EtherealChains.class,
 					HornOfPlenty.class,
 					MasterThievesArmband.class,
 					SandalsOfNature.class,
 					TalismanOfForesight.class,
 					TimekeepersHourglass.class,
-					UnstableSpellbook.class,
-					AlchemistsToolkit.class,
-					DriedRose.class,
-					LloydsBeacon.class,
-					EtherealChains.class
+					UnstableSpellbook.class
 			};
-			ARTIFACT.defaultProbs = new float[]{ 0, 1, 0, 1, 0, 1, 1, 1, 1, 1, 1, 0, 1};
+			ARTIFACT.defaultProbs = new float[]{ 1, 1, 0, 1, 1, 1, 1, 1, 1, 1, 1 };
 			ARTIFACT.probs = ARTIFACT.defaultProbs.clone();
 		}
 	}
@@ -473,6 +493,7 @@ public class Generator {
 	};
 
 	private static boolean usingFirstDeck = false;
+	private static HashMap<Category,Float> defaultCatProbs = new LinkedHashMap<>();
 	private static HashMap<Category,Float> categoryProbs = new LinkedHashMap<>();
 
 	public static void fullReset() {
@@ -480,12 +501,17 @@ public class Generator {
 		generalReset();
 		for (Category cat : Category.values()) {
 			reset(cat);
+			if (cat.defaultProbs != null) {
+				cat.seed = Random.Long();
+				cat.dropped = 0;
+			}
 		}
 	}
 
 	public static void generalReset(){
 		for (Category cat : Category.values()) {
 			categoryProbs.put( cat, usingFirstDeck ? cat.firstProb : cat.secondProb );
+			defaultCatProbs.put( cat, cat.firstProb + cat.secondProb );
 		}
 	}
 
@@ -501,7 +527,19 @@ public class Generator {
 			cat = Random.chances( categoryProbs );
 		}
 		categoryProbs.put( cat, categoryProbs.get( cat ) - 1);
-		return random( cat );
+
+		if (cat == Category.SEED) {
+			//We specifically use defaults for seeds here because, unlike other item categories
+			// their predominant source of drops is grass, not levelgen. This way the majority
+			// of seed drops still use a deck, but the few that are spawned by levelgen are consistent
+			return randomUsingDefaults(cat);
+		} else {
+			return random(cat);
+		}
+	}
+
+	public static Item randomUsingDefaults(){
+		return randomUsingDefaults(Random.chances( defaultCatProbs ));
 	}
 	
 	public static Item random( Category cat ) {
@@ -517,20 +555,32 @@ public class Generator {
 				//if we're out of artifacts, return a ring instead.
 				return item != null ? item : random(Category.RING);
 			default:
+				if (cat.defaultProbs != null && cat.seed != null){
+					Random.pushGenerator(cat.seed);
+					for (int i = 0; i < cat.dropped; i++) Random.Long();
+				}
+
 				int i = Random.chances(cat.probs);
 				if (i == -1) {
 					reset(cat);
 					i = Random.chances(cat.probs);
 				}
 				if (cat.defaultProbs != null) cat.probs[i]--;
+
+				if (cat.defaultProbs != null && cat.seed != null){
+					Random.popGenerator();
+					cat.dropped++;
+				}
+
 				return ((Item) Reflection.newInstance(cat.classes[i])).random();
 		}
 	}
 
 	//overrides any deck systems and always uses default probs
+	// except for artifacts, which must always use a deck
 	public static Item randomUsingDefaults( Category cat ){
-		if (cat.defaultProbs == null) {
-			return random(cat); //currently covers weapons/armor/missiles
+		if (cat.defaultProbs == null || cat == Category.ARTIFACT) {
+			return random(cat);
 		} else {
 			return ((Item) Reflection.newInstance(cat.classes[Random.chances(cat.defaultProbs)])).random();
 		}
@@ -601,7 +651,18 @@ public class Generator {
 	public static Artifact randomArtifact() {
 
 		Category cat = Category.ARTIFACT;
+
+		if (cat.defaultProbs != null && cat.seed != null){
+			Random.pushGenerator(cat.seed);
+			for (int i = 0; i < cat.dropped; i++) Random.Long();
+		}
+
 		int i = Random.chances( cat.probs );
+
+		if (cat.defaultProbs != null && cat.seed != null){
+			Random.popGenerator();
+			cat.dropped++;
+		}
 
 		//if no artifacts are left, return null
 		if (i == -1){
@@ -627,7 +688,9 @@ public class Generator {
 	private static final String FIRST_DECK = "first_deck";
 	private static final String GENERAL_PROBS = "general_probs";
 	private static final String CATEGORY_PROBS = "_probs";
-	
+	private static final String CATEGORY_SEED = "_seed";
+	private static final String CATEGORY_DROPPED = "_dropped";
+
 	public static void storeInBundle(Bundle bundle) {
 		bundle.put(FIRST_DECK, usingFirstDeck);
 
@@ -640,16 +703,11 @@ public class Generator {
 
 		for (Category cat : Category.values()){
 			if (cat.defaultProbs == null) continue;
-			boolean needsStore = false;
-			for (int i = 0; i < cat.probs.length; i++){
-				if (cat.probs[i] != cat.defaultProbs[i]){
-					needsStore = true;
-					break;
-				}
-			}
 
-			if (needsStore){
-				bundle.put(cat.name().toLowerCase() + CATEGORY_PROBS, cat.probs);
+			bundle.put(cat.name().toLowerCase() + CATEGORY_PROBS,   cat.probs);
+			if (cat.seed != null) {
+				bundle.put(cat.name().toLowerCase() + CATEGORY_SEED, cat.seed);
+				bundle.put(cat.name().toLowerCase() + CATEGORY_DROPPED, cat.dropped);
 			}
 		}
 	}
@@ -671,6 +729,10 @@ public class Generator {
 				float[] probs = bundle.getFloatArray(cat.name().toLowerCase() + CATEGORY_PROBS);
 				if (cat.defaultProbs != null && probs.length == cat.defaultProbs.length){
 					cat.probs = probs;
+				}
+				if (bundle.contains(cat.name().toLowerCase() + CATEGORY_SEED)){
+					cat.seed = bundle.getLong(cat.name().toLowerCase() + CATEGORY_SEED);
+					cat.dropped = bundle.getInt(cat.name().toLowerCase() + CATEGORY_DROPPED);
 				}
 			}
 		}

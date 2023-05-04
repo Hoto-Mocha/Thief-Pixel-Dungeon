@@ -3,7 +3,7 @@
  * Copyright (C) 2012-2015 Oleg Dolya
  *
  * Shattered Pixel Dungeon
- * Copyright (C) 2014-2022 Evan Debenham
+ * Copyright (C) 2014-2023 Evan Debenham
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -48,6 +48,8 @@ public class Statue extends Mob {
 	}
 	
 	protected Weapon weapon;
+
+	public boolean levelGenStatue = true;
 	
 	public Statue() {
 		super();
@@ -78,7 +80,7 @@ public class Statue extends Mob {
 	
 	@Override
 	protected boolean act() {
-		if (Dungeon.level.heroFOV[pos]) {
+		if (levelGenStatue && Dungeon.level.visited[pos]) {
 			Notes.add( Notes.Landmark.STATUE );
 		}
 		return super.act();
@@ -91,7 +93,7 @@ public class Statue extends Mob {
 	
 	@Override
 	public int attackSkill( Char target ) {
-		return (int)((9 + Dungeon.depth) * weapon.accuracyFactor(this));
+		return (int)((9 + Dungeon.depth) * weapon.accuracyFactor( this, target ));
 	}
 	
 	@Override
@@ -106,15 +108,18 @@ public class Statue extends Mob {
 
 	@Override
 	public int drRoll() {
-		return Random.NormalIntRange(0, Dungeon.depth + weapon.defenseFactor(this));
+		return super.drRoll() + Random.NormalIntRange(0, Dungeon.depth + weapon.defenseFactor(this));
 	}
 	
 	@Override
-	public void add(Buff buff) {
-		super.add(buff);
-		if (state == PASSIVE && buff.type == Buff.buffType.NEGATIVE){
-			state = HUNTING;
+	public boolean add(Buff buff) {
+		if (super.add(buff)) {
+			if (state == PASSIVE && buff.type == Buff.buffType.NEGATIVE) {
+				state = HUNTING;
+			}
+			return true;
 		}
+		return false;
 	}
 
 	@Override
@@ -152,7 +157,9 @@ public class Statue extends Mob {
 	
 	@Override
 	public void destroy() {
-		Notes.remove( Notes.Landmark.STATUE );
+		if (levelGenStatue) {
+			Notes.remove( Notes.Landmark.STATUE );
+		}
 		super.destroy();
 	}
 

@@ -3,7 +3,7 @@
  * Copyright (C) 2012-2015 Oleg Dolya
  *
  * Shattered Pixel Dungeon
- * Copyright (C) 2014-2022 Evan Debenham
+ * Copyright (C) 2014-2023 Evan Debenham
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -263,6 +263,27 @@ public class InventoryPane extends Component {
 
 		super.layout();
 	}
+	
+	public void alpha( float value ){
+		bg.alpha( value );
+		bg2.alpha( value );
+		
+		for (InventorySlot slot : equipped){
+			slot.alpha( value );
+		}
+		for (InventorySlot slot : bagItems){
+			slot.alpha( value );
+		}
+		
+		gold.alpha(value);
+		goldTxt.alpha(value);
+		energy.alpha(value);
+		energyTxt.alpha(value);
+
+		for (BagButton bag : bags){
+			bag.alpha( value );
+		}
+	}
 
 	public static void refresh(){
 		if (instance != null) instance.updateInventory();
@@ -289,7 +310,12 @@ public class InventoryPane extends Component {
 		equipped.get(3).item(stuff.misc == null ? new WndBag.Placeholder( ItemSpriteSheet.SOMETHING ) : stuff.misc);
 		equipped.get(4).item(stuff.ring == null ? new WndBag.Placeholder( ItemSpriteSheet.RING_HOLDER ) : stuff.ring);
 
-		ArrayList<Item> items = lastBag.items;
+		ArrayList<Item> items = (ArrayList<Item>) lastBag.items.clone();
+
+		if (lastBag == stuff.backpack && stuff.secondWep != null){
+			items.add(0, stuff.secondWep);
+		}
+
 		int j = 0;
 		for (int i = 0; i < 20; i++){
 			if (i == 0 && lastBag != stuff.backpack){
@@ -367,7 +393,9 @@ public class InventoryPane extends Component {
 			lastBag = Dungeon.hero.belongings.backpack;
 		} else if (selector.preferredBag() != null) {
 			Bag preferred = Dungeon.hero.belongings.getItem(selector.preferredBag());
-			if (preferred != null) lastBag = preferred;
+			if (preferred != null)  lastBag = preferred;
+			//if a specific preferred bag isn't present, then the relevant items will be in backpack
+			else                    lastBag = Dungeon.hero.belongings.backpack;
 		}
 		updateInventory();
 	}
@@ -507,6 +535,10 @@ public class InventoryPane extends Component {
 				return;
 			}
 
+			if (!Dungeon.hero.isAlive() || !Dungeon.hero.ready){
+				return;
+			}
+
 			if (targeting){
 				if (targetingSlot == this){
 					onClick();
@@ -514,7 +546,7 @@ public class InventoryPane extends Component {
 				return;
 			}
 
-			if (selector == null && item.defaultAction != null){
+			if (selector == null && item.defaultAction() != null){
 				item.execute(Dungeon.hero);
 				if (item.usesTargeting) {
 					targetingSlot = this;
@@ -529,6 +561,10 @@ public class InventoryPane extends Component {
 		protected void onRightClick() {
 			if (lastBag != item && !lastBag.contains(item) && !item.isEquipped(Dungeon.hero)){
 				updateInventory();
+				return;
+			}
+
+			if (!Dungeon.hero.isAlive() || !Dungeon.hero.ready){
 				return;
 			}
 
@@ -553,8 +589,8 @@ public class InventoryPane extends Component {
 
 	private class BagButton extends IconButton {
 
-		private static final int ACTIVE		= 0x99333333;
-		private static final int INACTIVE	= 0x99242424;
+		private static final int ACTIVE		= 0x9953564D;
+		private static final int INACTIVE	= 0x9942443D;
 
 		private ColorBlock bgTop;
 		private ColorBlock bgBottom;
@@ -606,6 +642,12 @@ public class InventoryPane extends Component {
 			bgBottom.y = y+1;
 			bgBottom.x = x;
 		}
+		
+		public void alpha( float value ){
+			bgTop.alpha(value);
+			bgBottom.alpha(value);
+			icon.alpha(value);
+		}
 
 		@Override
 		protected void onClick() {
@@ -628,6 +670,11 @@ public class InventoryPane extends Component {
 				case 5:
 					return SPDAction.BAG_5;
 			}
+		}
+
+		@Override
+		public GameAction secondaryTooltipAction() {
+			return SPDAction.INVENTORY_SELECTOR;
 		}
 
 		@Override

@@ -36,7 +36,7 @@ public class WaterThief_3 extends Thief_3 {
 		spriteClass = WaterThiefSprite.class;
 
 		//guaranteed first drop, then 1/3, 1/9, etc.
-		lootChance = 1f;
+		lootChance = 0.3f;
 		loot = Generator.Category.POTION;
 	}
 	

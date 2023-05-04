@@ -3,7 +3,7 @@
  * Copyright (C) 2012-2015 Oleg Dolya
  *
  * Shattered Pixel Dungeon
- * Copyright (C) 2014-2022 Evan Debenham
+ * Copyright (C) 2014-2023 Evan Debenham
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -29,8 +29,9 @@ import com.shatteredpixel.shatteredpixeldungeon.effects.Transmuting;
 import com.shatteredpixel.shatteredpixeldungeon.items.EquipableItem;
 import com.shatteredpixel.shatteredpixeldungeon.items.Generator;
 import com.shatteredpixel.shatteredpixeldungeon.items.Item;
+import com.shatteredpixel.shatteredpixeldungeon.items.KindOfWeapon;
 import com.shatteredpixel.shatteredpixeldungeon.items.artifacts.Artifact;
-import com.shatteredpixel.shatteredpixeldungeon.items.artifacts.MasterThievesArmband;
+import com.shatteredpixel.shatteredpixeldungeon.items.artifacts.DriedRose;
 import com.shatteredpixel.shatteredpixeldungeon.items.potions.AlchemicalCatalyst;
 import com.shatteredpixel.shatteredpixeldungeon.items.potions.Potion;
 import com.shatteredpixel.shatteredpixeldungeon.items.potions.brews.Brew;
@@ -51,6 +52,7 @@ import com.shatteredpixel.shatteredpixeldungeon.messages.Messages;
 import com.shatteredpixel.shatteredpixeldungeon.plants.Plant;
 import com.shatteredpixel.shatteredpixeldungeon.sprites.ItemSpriteSheet;
 import com.shatteredpixel.shatteredpixeldungeon.utils.GLog;
+import com.sun.tools.javac.jvm.Gen;
 import com.watabou.utils.Random;
 import com.watabou.utils.Reflection;
 
@@ -72,7 +74,7 @@ public class ScrollOfTransmutation extends InventoryScroll {
 				item instanceof Wand ||
 				item instanceof Plant.Seed ||
 				item instanceof Runestone ||
-				(item instanceof Artifact && !(item instanceof MasterThievesArmband));
+				item instanceof Artifact;
 	}
 	
 	@Override
@@ -89,8 +91,14 @@ public class ScrollOfTransmutation extends InventoryScroll {
 				int slot = Dungeon.quickslot.getSlot(item);
 				if (item.isEquipped(Dungeon.hero)) {
 					item.cursed = false; //to allow it to be unequipped
-					((EquipableItem) item).doUnequip(Dungeon.hero, false);
-					((EquipableItem) result).doEquip(Dungeon.hero);
+					if (item instanceof KindOfWeapon && Dungeon.hero.belongings.secondWep() == item){
+						((EquipableItem) item).doUnequip(Dungeon.hero, false);
+						((KindOfWeapon) result).equipSecondary(Dungeon.hero);
+					} else {
+						((EquipableItem) item).doUnequip(Dungeon.hero, false);
+						((EquipableItem) result).doEquip(Dungeon.hero);
+					}
+					Dungeon.hero.spend(-Dungeon.hero.cooldown()); //cancel equip/unequip time
 				} else {
 					item.detach(Dungeon.hero.belongings.backpack);
 					if (!result.collect()) {
@@ -100,7 +108,7 @@ public class ScrollOfTransmutation extends InventoryScroll {
 					}
 				}
 				if (slot != -1
-						&& result.defaultAction != null
+						&& result.defaultAction() != null
 						&& !Dungeon.quickslot.isNonePlaceholder(slot)
 						&& Dungeon.hero.belongings.contains(result)){
 					Dungeon.quickslot.setSlot(slot, result);
@@ -136,7 +144,12 @@ public class ScrollOfTransmutation extends InventoryScroll {
 		} else if (item instanceof Runestone) {
 			return changeStone((Runestone) item);
 		} else if (item instanceof Artifact) {
-			return changeArtifact( (Artifact)item );
+			Artifact a = changeArtifact( (Artifact)item );
+			if (a == null){
+				return Generator.random(Generator.Category.RING);
+			} else {
+				return a;
+			}
 		} else {
 			return null;
 		}
@@ -225,9 +238,22 @@ public class ScrollOfTransmutation extends InventoryScroll {
 	}
 	
 	private static Artifact changeArtifact( Artifact a ) {
-		Artifact n = Generator.randomArtifact();
+		Artifact n;
+		do {
+			n = Generator.randomArtifact();
+		} while ( n != null && (Challenges.isItemBlocked(n) || n.getClass() == a.getClass()));
 		
-		if (n != null && !Challenges.isItemBlocked(n)){
+		if (n != null){
+
+			if (a instanceof DriedRose){
+				if (((DriedRose) a).ghostWeapon() != null){
+					Dungeon.level.drop(((DriedRose) a).ghostWeapon(), Dungeon.hero.pos);
+				}
+				if (((DriedRose) a).ghostArmor() != null){
+					Dungeon.level.drop(((DriedRose) a).ghostArmor(), Dungeon.hero.pos);
+				}
+			}
+
 			n.cursedKnown = a.cursedKnown;
 			n.cursed = a.cursed;
 			n.levelKnown = a.levelKnown;
@@ -267,7 +293,7 @@ public class ScrollOfTransmutation extends InventoryScroll {
 		Plant.Seed n;
 		
 		do {
-			n = (Plant.Seed)Generator.random( Generator.Category.SEED );
+			n = (Plant.Seed)Generator.randomUsingDefaults( Generator.Category.SEED );
 		} while (n.getClass() == s.getClass());
 		
 		return n;
@@ -278,7 +304,7 @@ public class ScrollOfTransmutation extends InventoryScroll {
 		Runestone n;
 		
 		do {
-			n = (Runestone) Generator.random( Generator.Category.STONE );
+			n = (Runestone) Generator.randomUsingDefaults( Generator.Category.STONE );
 		} while (n.getClass() == r.getClass());
 		
 		return n;

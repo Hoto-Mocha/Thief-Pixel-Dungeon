@@ -40,7 +40,7 @@ public class Bandit_2 extends Thief_2 {
 		spriteClass = BanditSprite.class;
 
 		//guaranteed first drop, then 1/3, 1/9, etc.
-		lootChance = 1f;
+		lootChance = 0.05f;
 		loot = Generator.Category.ARTIFACT;
 	}
 	

@@ -3,7 +3,7 @@
  * Copyright (C) 2012-2015 Oleg Dolya
  *
  * Shattered Pixel Dungeon
- * Copyright (C) 2014-2022 Evan Debenham
+ * Copyright (C) 2014-2023 Evan Debenham
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -88,11 +88,8 @@ public class ItemSpriteSheet {
 	public static final int SANDBAG         = UNCOLLECTIBLE+5;
 	public static final int SPIRIT_ARROW    = UNCOLLECTIBLE+6;
 	
-	public static final int GUIDE_PAGE      = UNCOLLECTIBLE+8;
-	public static final int ALCH_PAGE       = UNCOLLECTIBLE+9;
-	
-	public static final int TENGU_BOMB      = UNCOLLECTIBLE+11;
-	public static final int TENGU_SHOCKER   = UNCOLLECTIBLE+12;
+	public static final int TENGU_BOMB      = UNCOLLECTIBLE+8;
+	public static final int TENGU_SHOCKER   = UNCOLLECTIBLE+9;
 	static{
 		assignItemRect(GOLD,        15, 13);
 		assignItemRect(ENERGY,      16, 16);
@@ -101,9 +98,6 @@ public class ItemSpriteSheet {
 		assignItemRect(PETAL,       8,  8);
 		assignItemRect(SANDBAG,     10, 10);
 		assignItemRect(SPIRIT_ARROW,11, 11);
-		
-		assignItemRect(GUIDE_PAGE,  10, 11);
-		assignItemRect(ALCH_PAGE,   10, 11);
 		
 		assignItemRect(TENGU_BOMB,      10, 10);
 		assignItemRect(TENGU_SHOCKER,   10, 10);
@@ -209,6 +203,7 @@ public class ItemSpriteSheet {
 	static{
 		assignItemRect(WORN_SHORTSWORD, 13, 13);
 		assignItemRect(GLOVES,          12, 16);
+		assignItemRect(RAPIER,          13, 14);
 		assignItemRect(DAGGER,          12, 13);
 		assignItemRect(MAGES_STAFF,     15, 16);
 	}
@@ -277,10 +272,10 @@ public class ItemSpriteSheet {
 
 	                                                                                    //8 free slots
 
-	private static final int MISSILE_WEP    =                               xy(1, 10);  //16 slots. 3 per tier + boomerang
+	private static final int MISSILE_WEP    =                               xy(1, 10);  //16 slots. 3 per tier + bow
 	public static final int SPIRIT_BOW      = MISSILE_WEP+0;
 	
-	public static final int DART            = MISSILE_WEP+1;
+	public static final int THROWING_SPIKE  = MISSILE_WEP+1;
 	public static final int THROWING_KNIFE  = MISSILE_WEP+2;
 	public static final int THROWING_STONE  = MISSILE_WEP+3;
 	
@@ -303,7 +298,7 @@ public class ItemSpriteSheet {
 	static{
 		assignItemRect(SPIRIT_BOW,      16, 16);
 		
-		assignItemRect(DART,            15, 15);
+		assignItemRect(THROWING_SPIKE,  11, 10);
 		assignItemRect(THROWING_KNIFE,  12, 13);
 		assignItemRect(THROWING_STONE,  12, 10);
 		
@@ -324,21 +319,22 @@ public class ItemSpriteSheet {
 		assignItemRect(FORCE_CUBE,      11, 12);
 	}
 	
-	public static final int TIPPED_DARTS    =                               xy(1, 11);  //16 slots
-	public static final int ROT_DART        = TIPPED_DARTS+0;
-	public static final int INCENDIARY_DART = TIPPED_DARTS+1;
-	public static final int ADRENALINE_DART = TIPPED_DARTS+2;
-	public static final int HEALING_DART    = TIPPED_DARTS+3;
-	public static final int CHILLING_DART   = TIPPED_DARTS+4;
-	public static final int SHOCKING_DART   = TIPPED_DARTS+5;
-	public static final int POISON_DART     = TIPPED_DARTS+6;
-	public static final int CLEANSING_DART  = TIPPED_DARTS+7;
-	public static final int PARALYTIC_DART  = TIPPED_DARTS+8;
-	public static final int HOLY_DART       = TIPPED_DARTS+9;
-	public static final int DISPLACING_DART = TIPPED_DARTS+10;
-	public static final int BLINDING_DART   = TIPPED_DARTS+11;
+	public static final int DARTS    =                                      xy(1, 11);  //16 slots
+	public static final int DART            = DARTS+0;
+	public static final int ROT_DART        = DARTS+1;
+	public static final int INCENDIARY_DART = DARTS+2;
+	public static final int ADRENALINE_DART = DARTS+3;
+	public static final int HEALING_DART    = DARTS+4;
+	public static final int CHILLING_DART   = DARTS+5;
+	public static final int SHOCKING_DART   = DARTS+6;
+	public static final int POISON_DART     = DARTS+7;
+	public static final int CLEANSING_DART  = DARTS+8;
+	public static final int PARALYTIC_DART  = DARTS+9;
+	public static final int HOLY_DART       = DARTS+10;
+	public static final int DISPLACING_DART = DARTS+11;
+	public static final int BLINDING_DART   = DARTS+12;
 	static {
-		for (int i = TIPPED_DARTS; i < TIPPED_DARTS+16; i++)
+		for (int i = DARTS; i < DARTS+16; i++)
 			assignItemRect(i, 15, 15);
 	}
 	
@@ -352,6 +348,7 @@ public class ItemSpriteSheet {
 	public static final int ARMOR_MAGE      = ARMOR+6;
 	public static final int ARMOR_ROGUE     = ARMOR+7;
 	public static final int ARMOR_HUNTRESS  = ARMOR+8;
+	public static final int ARMOR_DUELIST   = ARMOR+9;
 	static{
 		assignItemRect(ARMOR_CLOTH,     15, 12);
 		assignItemRect(ARMOR_LEATHER,   14, 13);
@@ -362,6 +359,7 @@ public class ItemSpriteSheet {
 		assignItemRect(ARMOR_MAGE,      15, 15);
 		assignItemRect(ARMOR_ROGUE,     14, 12);
 		assignItemRect(ARMOR_HUNTRESS,  13, 15);
+		assignItemRect(ARMOR_DUELIST,   12, 13);
 	}
 
 	                                                                                    //16 free slots
@@ -562,7 +560,7 @@ public class ItemSpriteSheet {
 	public static final int SEED_ICECAP         = SEEDS+4;
 	public static final int SEED_STORMVINE      = SEEDS+5;
 	public static final int SEED_SORROWMOSS     = SEEDS+6;
-	public static final int SEED_DREAMFOIL      = SEEDS+7;
+	public static final int SEED_MAGEROYAL = SEEDS+7;
 	public static final int SEED_EARTHROOT      = SEEDS+8;
 	public static final int SEED_STARFLOWER     = SEEDS+9;
 	public static final int SEED_FADELEAF       = SEEDS+10;
@@ -697,7 +695,23 @@ public class ItemSpriteSheet {
 		assignItemRect(VIAL,        12, 12);
 	}
 
-	                                                                                    //16 free slots
+	private static final int DOCUMENTS  =                                   xy(1, 32);  //16 slots
+	public static final int GUIDE_PAGE  = DOCUMENTS+0;
+	public static final int ALCH_PAGE   = DOCUMENTS+1;
+	public static final int SEWER_PAGE  = DOCUMENTS+2;
+	public static final int PRISON_PAGE = DOCUMENTS+3;
+	public static final int CAVES_PAGE  = DOCUMENTS+4;
+	public static final int CITY_PAGE   = DOCUMENTS+5;
+	public static final int HALLS_PAGE  = DOCUMENTS+6;
+	static{
+		assignItemRect(GUIDE_PAGE,  10, 11);
+		assignItemRect(ALCH_PAGE,   10, 11);
+		assignItemRect(SEWER_PAGE,  10, 11);
+		assignItemRect(PRISON_PAGE, 10, 11);
+		assignItemRect(CAVES_PAGE,  10, 11);
+		assignItemRect(CITY_PAGE,   10, 11);
+		assignItemRect(HALLS_PAGE,  10, 11);
+	}
 
 	//for smaller 8x8 icons that often accompany an item sprite
 	public static class Icons {
@@ -720,19 +734,20 @@ public class ItemSpriteSheet {
 
 		private static final int RINGS          =                            xy(1, 1);  //16 slots
 		public static final int RING_ACCURACY   = RINGS+0;
-		public static final int RING_ELEMENTS   = RINGS+1;
-		public static final int RING_ENERGY     = RINGS+2;
-		public static final int RING_EVASION    = RINGS+3;
-		public static final int RING_FORCE      = RINGS+4;
-		public static final int RING_FUROR      = RINGS+5;
-		public static final int RING_HASTE      = RINGS+6;
-		public static final int RING_MIGHT      = RINGS+7;
-		public static final int RING_SHARPSHOOT = RINGS+8;
-		public static final int RING_TENACITY   = RINGS+9;
-		public static final int RING_WEALTH     = RINGS+10;
-		public static final int RING_UNUSED     = RINGS+11;
+		public static final int RING_ARCANA     = RINGS+1;
+		public static final int RING_ELEMENTS   = RINGS+2;
+		public static final int RING_ENERGY     = RINGS+3;
+		public static final int RING_EVASION    = RINGS+4;
+		public static final int RING_FORCE      = RINGS+5;
+		public static final int RING_FUROR      = RINGS+6;
+		public static final int RING_HASTE      = RINGS+7;
+		public static final int RING_MIGHT      = RINGS+8;
+		public static final int RING_SHARPSHOOT = RINGS+9;
+		public static final int RING_TENACITY   = RINGS+10;
+		public static final int RING_WEALTH     = RINGS+11;
 		static {
 			assignIconRect( RING_ACCURACY,      7, 7 );
+			assignIconRect( RING_ARCANA,        7, 7 );
 			assignIconRect( RING_ELEMENTS,      7, 7 );
 			assignIconRect( RING_ENERGY,        7, 5 );
 			assignIconRect( RING_EVASION,       7, 7 );

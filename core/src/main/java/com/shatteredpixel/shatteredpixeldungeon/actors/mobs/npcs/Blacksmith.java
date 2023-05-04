@@ -3,7 +3,7 @@
  * Copyright (C) 2012-2015 Oleg Dolya
  *
  * Shattered Pixel Dungeon
- * Copyright (C) 2014-2022 Evan Debenham
+ * Copyright (C) 2014-2023 Evan Debenham
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -24,7 +24,9 @@ package com.shatteredpixel.shatteredpixeldungeon.actors.mobs.npcs;
 import com.shatteredpixel.shatteredpixeldungeon.Assets;
 import com.shatteredpixel.shatteredpixeldungeon.Badges;
 import com.shatteredpixel.shatteredpixeldungeon.Dungeon;
+import com.shatteredpixel.shatteredpixeldungeon.Statistics;
 import com.shatteredpixel.shatteredpixeldungeon.actors.Char;
+import com.shatteredpixel.shatteredpixeldungeon.actors.buffs.AscensionChallenge;
 import com.shatteredpixel.shatteredpixeldungeon.actors.buffs.Buff;
 import com.shatteredpixel.shatteredpixeldungeon.items.BrokenSeal;
 import com.shatteredpixel.shatteredpixeldungeon.items.EquipableItem;
@@ -61,7 +63,11 @@ public class Blacksmith extends NPC {
 	
 	@Override
 	protected boolean act() {
-		if (Dungeon.level.heroFOV[pos] && !Quest.reforged){
+		if (Dungeon.hero.buff(AscensionChallenge.class) != null){
+			die(null);
+			return true;
+		}
+		if (Dungeon.level.visited[pos] && !Quest.reforged){
 			Notes.add( Notes.Landmark.TROLL );
 		}
 		return super.act();
@@ -93,8 +99,9 @@ public class Blacksmith extends NPC {
 							Notes.add( Notes.Landmark.TROLL );
 							
 							Pickaxe pick = new Pickaxe();
+							pick.identify();
 							if (pick.doPickUp( Dungeon.hero )) {
-								GLog.i( Messages.get(Dungeon.hero, "you_now_have", pick.name() ));
+								GLog.i( Messages.capitalize(Messages.get(Dungeon.hero, "you_now_have", pick.name()) ));
 							} else {
 								Dungeon.level.drop( pick, Dungeon.hero.pos ).sprite.drop();
 							}
@@ -113,6 +120,7 @@ public class Blacksmith extends NPC {
 					tell( Messages.get(this, "blood_2") );
 				} else {
 					if (pick.isEquipped( Dungeon.hero )) {
+						pick.cursed = false; //so that it can always be removed
 						pick.doUnequip( Dungeon.hero, false );
 					}
 					pick.detach( Dungeon.hero.belongings.backpack );
@@ -120,6 +128,7 @@ public class Blacksmith extends NPC {
 					
 					Quest.completed = true;
 					Quest.reforged = false;
+					Statistics.questScores[2] = 3000;
 				}
 				
 			} else {
@@ -140,6 +149,7 @@ public class Blacksmith extends NPC {
 					
 					Quest.completed = true;
 					Quest.reforged = false;
+					Statistics.questScores[2] = 3000;
 				}
 				
 			}
@@ -206,7 +216,7 @@ public class Blacksmith extends NPC {
 	public static void upgrade( Item item1, Item item2 ) {
 		
 		Item first, second;
-		if (item2.level() > item1.level()) {
+		if (item2.trueLevel() > item1.trueLevel()) {
 			first = item2;
 			second = item1;
 		} else {
@@ -254,10 +264,12 @@ public class Blacksmith extends NPC {
 	
 	@Override
 	public void damage( int dmg, Object src ) {
+		//do nothing
 	}
-	
+
 	@Override
-	public void add( Buff buff ) {
+	public boolean add( Buff buff ) {
+		return false;
 	}
 	
 	@Override

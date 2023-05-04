@@ -3,7 +3,7 @@
  * Copyright (C) 2012-2015 Oleg Dolya
  *
  * Shattered Pixel Dungeon
- * Copyright (C) 2014-2022 Evan Debenham
+ * Copyright (C) 2014-2023 Evan Debenham
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -42,7 +42,7 @@ public class Regeneration extends Buff {
 
 			if (target.HP < regencap() && !((Hero)target).isStarving()) {
 				LockedFloor lock = target.buff(LockedFloor.class);
-				if (target.HP > 0 && (lock == null || lock.regenOn())) {
+				if (lock == null || lock.regenOn()) {
 					target.HP += 1;
 					if (target.HP == regencap()) {
 						((Hero) target).resting = false;
@@ -53,11 +53,12 @@ public class Regeneration extends Buff {
 			ChaliceOfBlood.chaliceRegen regenBuff = Dungeon.hero.buff( ChaliceOfBlood.chaliceRegen.class);
 
 			float delay = REGENERATION_DELAY;
-			if (regenBuff != null) {
+			if (regenBuff != null && target.buff(MagicImmune.class) == null) {
 				if (regenBuff.isCursed()) {
 					delay *= 1.5f;
 				} else {
-					delay -= regenBuff.itemLevel()*0.9f;
+					//15% boost at +0, scaling to a 500% boost at +10
+					delay -= 1.33f + regenBuff.itemLevel()*0.667f;
 					delay /= RingOfEnergy.artifactChargeMultiplier(target);
 				}
 			}

@@ -3,7 +3,7 @@
  * Copyright (C) 2012-2015 Oleg Dolya
  *
  * Shattered Pixel Dungeon
- * Copyright (C) 2014-2022 Evan Debenham
+ * Copyright (C) 2014-2023 Evan Debenham
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -23,6 +23,7 @@ package com.shatteredpixel.shatteredpixeldungeon.scenes;
 
 import com.shatteredpixel.shatteredpixeldungeon.Assets;
 import com.shatteredpixel.shatteredpixeldungeon.Chrome;
+import com.shatteredpixel.shatteredpixeldungeon.Dungeon;
 import com.shatteredpixel.shatteredpixeldungeon.GamesInProgress;
 import com.shatteredpixel.shatteredpixeldungeon.SPDSettings;
 import com.shatteredpixel.shatteredpixeldungeon.ShatteredPixelDungeon;
@@ -106,7 +107,7 @@ public class TitleScene extends PixelScene {
 		add( signs );
 
 		final Chrome.Type GREY_TR = Chrome.Type.GREY_BUTTON_TR;
-
+		
 		StyledButton btnPlay = new StyledButton(GREY_TR, Messages.get(this, "enter")){
 			@Override
 			protected void onClick() {
@@ -118,7 +119,7 @@ public class TitleScene extends PixelScene {
 					ShatteredPixelDungeon.switchNoFade( StartScene.class );
 				}
 			}
-
+			
 			@Override
 			protected boolean onLongClick() {
 				//making it easier to start runs quickly while debugging
@@ -145,6 +146,7 @@ public class TitleScene extends PixelScene {
 		};
 		btnRankings.icon(Icons.get(Icons.RANKINGS));
 		add(btnRankings);
+		Dungeon.daily = Dungeon.dailyReplay = false;
 
 		StyledButton btnBadges = new StyledButton(GREY_TR, Messages.get(this, "badges")){
 			@Override
@@ -172,9 +174,9 @@ public class TitleScene extends PixelScene {
 				ShatteredPixelDungeon.switchScene( AboutScene.class );
 			}
 		};
-		btnAbout.icon(Icons.get(Icons.SHPX));
+		btnAbout.icon(Icons.get(Icons.ARRANGED));
 		add(btnAbout);
-
+		
 		final int BTN_HEIGHT = 20;
 		int GAP = (int)(h - topRegion - (landscape() ? 3 : 4)*BTN_HEIGHT)/3;
 		GAP /= landscape() ? 3 : 5;
@@ -326,7 +328,7 @@ public class TitleScene extends PixelScene {
 
 		public SettingsButton( Chrome.Type type, String label ){
 			super(type, label);
-			if (Messages.lang().status() == Languages.Status.INCOMPLETE){
+			if (Messages.lang().status() == Languages.Status.UNFINISHED){
 				icon(Icons.get(Icons.LANGS));
 				icon.hardlight(1.5f, 0, 0);
 			} else {
@@ -338,14 +340,14 @@ public class TitleScene extends PixelScene {
 		public void update() {
 			super.update();
 
-			if (Messages.lang().status() == Languages.Status.INCOMPLETE){
+			if (Messages.lang().status() == Languages.Status.UNFINISHED){
 				textColor(ColorMath.interpolate( 0xFFFFFF, CharSprite.NEGATIVE, 0.5f + (float)Math.sin(Game.timeTotal*5)/2f));
 			}
 		}
 
 		@Override
 		protected void onClick() {
-			if (Messages.lang().status() == Languages.Status.INCOMPLETE){
+			if (Messages.lang().status() == Languages.Status.UNFINISHED){
 				WndSettings.last_index = 4;
 			}
 			ShatteredPixelDungeon.scene().add(new WndSettings());
@@ -356,7 +358,7 @@ public class TitleScene extends PixelScene {
 
 		public SupportButton( Chrome.Type type, String label ){
 			super(type, label);
-			icon(Icons.get(Icons.GOLD));
+			icon(Icons.get(Icons.WARNING));
 			textColor(Window.TITLE_COLOR);
 		}
 

@@ -3,7 +3,7 @@
  * Copyright (C) 2012-2015 Oleg Dolya
  *
  * Shattered Pixel Dungeon
- * Copyright (C) 2014-2022 Evan Debenham
+ * Copyright (C) 2014-2023 Evan Debenham
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -33,6 +33,7 @@ public class DirectableAlly extends NPC {
 		alignment = Char.Alignment.ALLY;
 		intelligentAlly = true;
 		WANDERING = new Wandering();
+		HUNTING = new Hunting();
 		state = WANDERING;
 
 		//before other mobs
@@ -71,6 +72,14 @@ public class DirectableAlly extends NPC {
 		movingToDefendPos = false;
 	}
 
+	@Override
+	public void aggro(Char ch) {
+		enemy = ch;
+		if (!movingToDefendPos && state != PASSIVE){
+			state = HUNTING;
+		}
+	}
+
 	public void directTocell( int cell ){
 		if (!Dungeon.level.heroFOV[cell]
 				|| Actor.findChar(cell) == null
@@ -78,12 +87,6 @@ public class DirectableAlly extends NPC {
 			defendPos( cell );
 			return;
 		}
-
-		//TODO commenting this out for now, it should be pointless??
-		/*if (fieldOfView == null || fieldOfView.length != Dungeon.level.length()){
-			fieldOfView = new boolean[Dungeon.level.length()];
-		}
-		Dungeon.level.updateFieldOfView( this, fieldOfView );*/
 
 		if (Actor.findChar(cell) == Dungeon.hero){
 			followHero();
@@ -115,7 +118,10 @@ public class DirectableAlly extends NPC {
 
 		@Override
 		public boolean act( boolean enemyInFOV, boolean justAlerted ) {
-			if ( enemyInFOV && !movingToDefendPos && attacksAutomatically) {
+			if ( enemyInFOV
+					&& attacksAutomatically
+					&& !movingToDefendPos
+					&& (defendingPos == -1 || !Dungeon.level.heroFOV[defendingPos] || canAttack(enemy))) {
 
 				enemySeen = true;
 
@@ -146,6 +152,20 @@ public class DirectableAlly extends NPC {
 
 			}
 			return true;
+		}
+
+	}
+
+	private class Hunting extends Mob.Hunting {
+
+		@Override
+		public boolean act(boolean enemyInFOV, boolean justAlerted) {
+			if (enemyInFOV && defendingPos != -1 && Dungeon.level.heroFOV[defendingPos] && !canAttack(enemy)){
+				target = defendingPos;
+				state = WANDERING;
+				return true;
+			}
+			return super.act(enemyInFOV, justAlerted);
 		}
 
 	}

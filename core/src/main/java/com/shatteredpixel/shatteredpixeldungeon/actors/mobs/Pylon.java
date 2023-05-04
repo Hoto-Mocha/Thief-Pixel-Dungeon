@@ -3,7 +3,7 @@
  * Copyright (C) 2012-2015 Oleg Dolya
  *
  * Shattered Pixel Dungeon
- * Copyright (C) 2014-2022 Evan Debenham
+ * Copyright (C) 2014-2023 Evan Debenham
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -24,6 +24,7 @@ package com.shatteredpixel.shatteredpixeldungeon.actors.mobs;
 import com.shatteredpixel.shatteredpixeldungeon.Assets;
 import com.shatteredpixel.shatteredpixeldungeon.Challenges;
 import com.shatteredpixel.shatteredpixeldungeon.Dungeon;
+import com.shatteredpixel.shatteredpixeldungeon.Statistics;
 import com.shatteredpixel.shatteredpixeldungeon.actors.Actor;
 import com.shatteredpixel.shatteredpixeldungeon.actors.Char;
 import com.shatteredpixel.shatteredpixeldungeon.actors.blobs.Electricity;
@@ -62,6 +63,7 @@ public class Pylon extends Mob {
 		maxLvl = -2;
 
 		properties.add(Property.MINIBOSS);
+		properties.add(Property.BOSS_MINION);
 		properties.add(Property.INORGANIC);
 		properties.add(Property.ELECTRIC);
 		properties.add(Property.IMMOVABLE);
@@ -124,9 +126,13 @@ public class Pylon extends Mob {
 			ch.sprite.flash();
 			ch.damage(Random.NormalIntRange(10, 20), new Electricity());
 
-			if (ch == Dungeon.hero && !ch.isAlive()){
-				Dungeon.fail(DM300.class);
-				GLog.n( Messages.get(Electricity.class, "ondeath") );
+			if (ch == Dungeon.hero) {
+				Statistics.qualifiedForBossChallengeBadge = false;
+				Statistics.bossScores[2] -= 100;
+				if (!ch.isAlive()) {
+					Dungeon.fail(DM300.class);
+					GLog.n(Messages.get(Electricity.class, "ondeath"));
+				}
 			}
 		}
 	}
@@ -163,17 +169,18 @@ public class Pylon extends Mob {
 	}
 
 	@Override
-	public void add(Buff buff) {
+	public boolean add(Buff buff) {
 		//immune to all buffs/debuffs when inactive
 		if (alignment != Alignment.NEUTRAL) {
-			super.add(buff);
+			return super.add(buff);
 		}
+		return false;
 	}
 
 	@Override
 	public boolean isInvulnerable(Class effect) {
 		//immune to damage when inactive
-		return (alignment == Alignment.NEUTRAL);
+		return alignment == Alignment.NEUTRAL || super.isInvulnerable(effect);
 	}
 
 	@Override

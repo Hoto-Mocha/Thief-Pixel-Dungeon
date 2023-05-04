@@ -3,7 +3,7 @@
  * Copyright (C) 2012-2015 Oleg Dolya
  *
  * Shattered Pixel Dungeon
- * Copyright (C) 2014-2022 Evan Debenham
+ * Copyright (C) 2014-2023 Evan Debenham
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -25,6 +25,7 @@ import com.shatteredpixel.shatteredpixeldungeon.Assets;
 import com.shatteredpixel.shatteredpixeldungeon.Badges;
 import com.shatteredpixel.shatteredpixeldungeon.Challenges;
 import com.shatteredpixel.shatteredpixeldungeon.Dungeon;
+import com.shatteredpixel.shatteredpixeldungeon.Statistics;
 import com.shatteredpixel.shatteredpixeldungeon.actors.Actor;
 import com.shatteredpixel.shatteredpixeldungeon.actors.Char;
 import com.shatteredpixel.shatteredpixeldungeon.actors.blobs.Blob;
@@ -67,6 +68,7 @@ import com.watabou.noosa.Camera;
 import com.watabou.noosa.audio.Sample;
 import com.watabou.noosa.particles.Emitter;
 import com.watabou.utils.Bundle;
+import com.watabou.utils.GameMath;
 import com.watabou.utils.PathFinder;
 import com.watabou.utils.Point;
 import com.watabou.utils.Random;
@@ -101,7 +103,7 @@ public class DM300 extends Mob {
 
 	@Override
 	public int drRoll() {
-		return Random.NormalIntRange(0, 10);
+		return super.drRoll() + Random.NormalIntRange(0, 10);
 	}
 
 	public int pylonsActivated = 0;
@@ -174,7 +176,7 @@ public class DM300 extends Mob {
 
 			//determine if DM can reach its enemy
 			boolean canReach;
-			if (enemy == null){
+			if (enemy == null || !enemy.isAlive()){
 				if (Dungeon.level.adjacent(pos, Dungeon.hero.pos)){
 					canReach = true;
 				} else {
@@ -194,10 +196,12 @@ public class DM300 extends Mob {
 				}
 			} else {
 
-				if (enemy == null && Dungeon.hero.invisible <= 0) enemy = Dungeon.hero;
+				if ((enemy == null || !enemy.isAlive()) && Dungeon.hero.invisible <= 0) {
+					enemy = Dungeon.hero;
+				}
 
 				//more aggressive ability usage when DM can't reach its target
-				if (enemy != null && !canReach){
+				if (enemy != null && enemy.isAlive() && !canReach){
 
 					//try to fire gas at an enemy we can't reach
 					if (turnsSinceLastAbility >= MIN_COOLDOWN){
@@ -234,7 +238,7 @@ public class DM300 extends Mob {
 
 					}
 
-				} else if (enemy != null && fieldOfView[enemy.pos]) {
+				} else if (enemy != null && enemy.isAlive() && fieldOfView[enemy.pos]) {
 					if (turnsSinceLastAbility > abilityCooldown) {
 
 						if (lastAbility == NONE) {
@@ -296,6 +300,14 @@ public class DM300 extends Mob {
 		}
 
 		return super.act();
+	}
+
+	@Override
+	public boolean attack(Char enemy, float dmgMulti, float dmgBonus, float accMulti) {
+		if (enemy == Dungeon.hero && supercharged){
+			Statistics.qualifiedForBossChallengeBadge = false;
+		}
+		return super.attack(enemy, dmgMulti, dmgBonus, accMulti);
 	}
 
 	@Override
@@ -394,14 +406,27 @@ public class DM300 extends Mob {
 		Dungeon.hero.interrupt();
 		final int rockCenter;
 
+		//knock back 2 tiles if adjacent
 		if (Dungeon.level.adjacent(pos, target.pos)){
 			int oppositeAdjacent = target.pos + (target.pos - pos);
 			Ballistica trajectory = new Ballistica(target.pos, oppositeAdjacent, Ballistica.MAGIC_BOLT);
-			WandOfBlastWave.throwChar(target, trajectory, 2, false, false);
+			WandOfBlastWave.throwChar(target, trajectory, 2, false, false, getClass());
 			if (target == Dungeon.hero){
 				Dungeon.hero.interrupt();
 			}
 			rockCenter = trajectory.path.get(Math.min(trajectory.dist, 2));
+
+		//knock back 1 tile if there's 1 tile of space
+		} else if (fieldOfView[target.pos] && Dungeon.level.distance(pos, target.pos) == 2) {
+			int oppositeAdjacent = target.pos + (target.pos - pos);
+			Ballistica trajectory = new Ballistica(target.pos, oppositeAdjacent, Ballistica.MAGIC_BOLT);
+			WandOfBlastWave.throwChar(target, trajectory, 1, false, false, getClass());
+			if (target == Dungeon.hero){
+				Dungeon.hero.interrupt();
+			}
+			rockCenter = trajectory.path.get(Math.min(trajectory.dist, 1));
+
+		//otherwise no knockback
 		} else {
 			rockCenter = target.pos;
 		}
@@ -432,7 +457,7 @@ public class DM300 extends Mob {
 				pos++;
 			}
 		}
-		Buff.append(this, FallingRockBuff.class, Math.min(target.cooldown(), 3*TICK)).setRockPositions(rockCells);
+		Buff.append(this, FallingRockBuff.class, GameMath.gate(TICK, target.cooldown(), 3*TICK)).setRockPositions(rockCells);
 
 	}
 
@@ -440,6 +465,10 @@ public class DM300 extends Mob {
 
 	@Override
 	public void damage(int dmg, Object src) {
+		if (!BossHealthBar.isAssigned()){
+			notice();
+		}
+
 		int preHP = HP;
 		super.damage(dmg, src);
 		if (isInvulnerable(src.getClass())){
@@ -476,7 +505,7 @@ public class DM300 extends Mob {
 			invulnWarned = true;
 			GLog.w(Messages.get(this, "charging_hint"));
 		}
-		return supercharged;
+		return supercharged || super.isInvulnerable(effect);
 	}
 
 	public void supercharge(){
@@ -533,6 +562,10 @@ public class DM300 extends Mob {
 		}
 
 		Badges.validateBossSlain();
+		if (Statistics.qualifiedForBossChallengeBadge){
+			Badges.validateBossChallengeCompleted();
+		}
+		Statistics.bossScores[2] += 3000;
 
 		LloydsBeacon beacon = Dungeon.hero.belongings.getItem(LloydsBeacon.class);
 		if (beacon != null) {
@@ -566,8 +599,11 @@ public class DM300 extends Mob {
 				for (int i : PathFinder.NEIGHBOURS9){
 					if (Dungeon.level.map[pos+i] == Terrain.WALL || Dungeon.level.map[pos+i] == Terrain.WALL_DECO){
 						Point p = Dungeon.level.cellToPoint(pos+i);
-						if (p.y < gate.bottom && p.x > gate.left-2 && p.x < gate.right+2){
+						if (p.y < gate.bottom && p.x >= gate.left-2 && p.x < gate.right+2){
 							continue; //don't break the gate or walls around the gate
+						}
+						if (!CavesBossLevel.diggableArea.inside(p)){
+							continue; //Don't break any walls out of the boss arena
 						}
 						Level.set(pos+i, Terrain.EMPTY_DECO);
 						GameScene.updateMap(pos+i);
@@ -641,6 +677,9 @@ public class DM300 extends Mob {
 				Char ch = Actor.findChar(i);
 				if (ch != null && !(ch instanceof DM300)){
 					Buff.prolong( ch, Paralysis.class, Dungeon.isChallenged(Challenges.STRONGER_BOSSES) ? 5 : 3 );
+					if (ch == Dungeon.hero){
+						Statistics.bossScores[2] -= 100;
+					}
 				}
 			}
 

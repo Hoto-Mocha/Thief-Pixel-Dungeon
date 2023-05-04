@@ -3,7 +3,7 @@
  * Copyright (C) 2012-2015 Oleg Dolya
  *
  * Shattered Pixel Dungeon
- * Copyright (C) 2014-2022 Evan Debenham
+ * Copyright (C) 2014-2023 Evan Debenham
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -22,6 +22,7 @@
 package com.shatteredpixel.shatteredpixeldungeon.items.bombs;
 
 import com.shatteredpixel.shatteredpixeldungeon.Assets;
+import com.shatteredpixel.shatteredpixeldungeon.Badges;
 import com.shatteredpixel.shatteredpixeldungeon.Dungeon;
 import com.shatteredpixel.shatteredpixeldungeon.SPDSettings;
 import com.shatteredpixel.shatteredpixeldungeon.actors.Actor;
@@ -178,7 +179,7 @@ public class Bomb extends Item {
 					continue;
 				}
 
-				int dmg = Random.NormalIntRange(5 + Dungeon.depth, 10 + Dungeon.depth*2);
+				int dmg = Random.NormalIntRange(5 + Dungeon.scalingDepth(), 10 + Dungeon.scalingDepth()*2);
 
 				//those not at the center of the blast take less damage
 				if (ch.pos != cell){
@@ -192,6 +193,10 @@ public class Bomb extends Item {
 				}
 				
 				if (ch == Dungeon.hero && !ch.isAlive()) {
+					if (this instanceof MagicalBomb){
+						Badges.validateDeathFromFriendlyMagic();
+					}
+					GLog.n(Messages.get(this, "ondeath"));
 					Dungeon.fail(Bomb.class);
 				}
 			}
@@ -255,6 +260,8 @@ public class Bomb extends Item {
 			Actor.add( fuse = ((Fuse)bundle.get(FUSE)).ignite(this) );
 	}
 
+	//used to track the death from friendly magic badge
+	public static class MagicalBomb extends Bomb{};
 
 	public static class Fuse extends Actor{
 

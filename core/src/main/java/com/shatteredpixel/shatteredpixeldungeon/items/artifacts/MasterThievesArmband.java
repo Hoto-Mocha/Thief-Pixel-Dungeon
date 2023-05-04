@@ -206,7 +206,7 @@ public class MasterThievesArmband extends Artifact {
 	protected ArtifactBuff passiveBuff() {
 		return new Thievery();
 	}
-	
+
 	@Override
 	public void charge(Hero target, float amount) {
 		partialCharge += 0.1f * amount;
@@ -286,7 +286,7 @@ public class MasterThievesArmband extends Artifact {
 				partialCharge = 0f;
 			}
 		}
-		
+
 		public boolean steal(Item item){
 			int chargesUsed = chargesToUse(item);
 			float stealChance = stealChance(item);

@@ -3,7 +3,7 @@
  * Copyright (C) 2012-2015 Oleg Dolya
  *
  * Shattered Pixel Dungeon
- * Copyright (C) 2014-2022 Evan Debenham
+ * Copyright (C) 2014-2023 Evan Debenham
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -66,16 +66,18 @@ public class Notes {
 	public enum Landmark {
 		WELL_OF_HEALTH,
 		WELL_OF_AWARENESS,
-		WELL_OF_TRANSMUTATION,
 		ALCHEMY,
 		GARDEN,
 		STATUE,
+		SACRIFICIAL_FIRE,
 		SHOP,
 		
 		GHOST,
 		WANDMAKER,
 		TROLL,
-		IMP;
+		IMP,
+
+		DEMON_SPAWNER;
 		
 		public String desc() {
 			return Messages.get(this, name());
@@ -116,7 +118,7 @@ public class Notes {
 		@Override
 		public void storeInBundle(Bundle bundle) {
 			super.storeInBundle(bundle);
-			bundle.put( LANDMARK, landmark.toString() );
+			bundle.put( LANDMARK, landmark.name() );
 		}
 	}
 	
@@ -137,7 +139,7 @@ public class Notes {
 		
 		@Override
 		public String desc() {
-			return key.toString();
+			return key.title();
 		}
 		
 		public Class<? extends Key> type(){

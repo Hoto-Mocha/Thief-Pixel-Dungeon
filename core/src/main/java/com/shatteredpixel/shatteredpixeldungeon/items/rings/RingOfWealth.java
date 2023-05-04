@@ -3,7 +3,7 @@
  * Copyright (C) 2012-2015 Oleg Dolya
  *
  * Shattered Pixel Dungeon
- * Copyright (C) 2014-2022 Evan Debenham
+ * Copyright (C) 2014-2023 Evan Debenham
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -46,7 +46,6 @@ import com.watabou.utils.Bundle;
 import com.watabou.utils.Random;
 import com.watabou.utils.Reflection;
 
-import java.text.DecimalFormat;
 import java.util.ArrayList;
 import java.util.HashSet;
 
@@ -61,9 +60,9 @@ public class RingOfWealth extends Ring {
 	
 	public String statsInfo() {
 		if (isIdentified()){
-			return Messages.get(this, "stats", new DecimalFormat("#.##").format(100f * (Math.pow(1.20f, soloBuffedBonus()) - 1f)));
+			return Messages.get(this, "stats", Messages.decimalFormat("#.##", 100f * (Math.pow(1.20f, soloBuffedBonus()) - 1f)));
 		} else {
-			return Messages.get(this, "typical_stats", new DecimalFormat("#.##").format(20f));
+			return Messages.get(this, "typical_stats", Messages.decimalFormat("#.##", 20f));
 		}
 	}
 
@@ -112,8 +111,8 @@ public class RingOfWealth extends Ring {
 
 		//reset (if needed), decrement, and store counts
 		if (triesToDrop == Float.MIN_VALUE) {
-			triesToDrop = Random.NormalIntRange(0, 25);
-			dropsToEquip = Random.NormalIntRange(4, 8);
+			triesToDrop = Random.NormalIntRange(0, 20);
+			dropsToEquip = Random.NormalIntRange(5, 10);
 		}
 
 		//now handle reward logic
@@ -122,12 +121,25 @@ public class RingOfWealth extends Ring {
 		triesToDrop -= tries;
 		while ( triesToDrop <= 0 ){
 			if (dropsToEquip <= 0){
+				int equipBonus = 0;
+
+				//A second ring of wealth can be at most +1 when calculating wealth bonus for equips
+				//This is to prevent using an upgraded wealth to farm another upgraded wealth and
+				//using the two to get substantially more upgrade value than intended
+				for (Wealth w : target.buffs(Wealth.class)){
+					if (w.buffedLvl() > equipBonus){
+						equipBonus = w.buffedLvl() + Math.min(equipBonus, 2);
+					} else {
+						equipBonus += Math.min(w.buffedLvl(), 2);
+					}
+				}
+
 				Item i;
 				do {
-					i = genEquipmentDrop(bonus - 1);
+					i = genEquipmentDrop(equipBonus - 1);
 				} while (Challenges.isItemBlocked(i));
 				drops.add(i);
-				dropsToEquip = Random.NormalIntRange(4, 8);
+				dropsToEquip = Random.NormalIntRange(5, 10);
 			} else {
 				Item i;
 				do {
@@ -136,7 +148,7 @@ public class RingOfWealth extends Ring {
 				drops.add(i);
 				dropsToEquip--;
 			}
-			triesToDrop += Random.NormalIntRange(0, 25);
+			triesToDrop += Random.NormalIntRange(0, 20);
 		}
 
 		//store values back into rings
@@ -197,11 +209,11 @@ public class RingOfWealth extends Ring {
 				Item i = new Gold().random();
 				return i.quantity(i.quantity()/2);
 			case 1:
-				return Generator.random(Generator.Category.STONE);
+				return Generator.randomUsingDefaults(Generator.Category.STONE);
 			case 2:
-				return Generator.random(Generator.Category.POTION);
+				return Generator.randomUsingDefaults(Generator.Category.POTION);
 			case 3:
-				return Generator.random(Generator.Category.SCROLL);
+				return Generator.randomUsingDefaults(Generator.Category.SCROLL);
 		}
 	}
 
@@ -267,9 +279,9 @@ public class RingOfWealth extends Ring {
 				result = Generator.random(Generator.Category.ARTIFACT);
 				break;
 		}
-		//minimum level is 1/2/3/4/5/6 when ring level is 1/3/6/10/15/21
+		//minimum level is 1/2/3/4/5/6 when ring level is 1/3/5/7/9/11
 		if (result.isUpgradable()){
-			int minLevel = (int)Math.floor((Math.sqrt(8*level + 1)-1)/2f);
+			int minLevel = (level+1)/2;
 			if (result.level() < minLevel){
 				result.level(minLevel);
 			}

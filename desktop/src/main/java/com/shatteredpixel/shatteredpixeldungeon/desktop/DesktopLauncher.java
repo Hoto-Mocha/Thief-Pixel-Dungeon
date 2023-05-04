@@ -3,7 +3,7 @@
  * Copyright (C) 2012-2015 Oleg Dolya
  *
  * Shattered Pixel Dungeon
- * Copyright (C) 2014-2022 Evan Debenham
+ * Copyright (C) 2014-2023 Evan Debenham
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -45,6 +45,7 @@ import org.lwjgl.util.tinyfd.TinyFileDialogs;
 
 import java.io.PrintWriter;
 import java.io.StringWriter;
+import java.util.Locale;
 
 public class DesktopLauncher {
 
@@ -86,16 +87,21 @@ public class DesktopLauncher {
 				exceptionMsg = exceptionMsg.replace("com.watabou.", "");
 				exceptionMsg = exceptionMsg.replace("com.badlogic.gdx.", "");
 				exceptionMsg = exceptionMsg.replace("\t", "    ");
+				exceptionMsg = exceptionMsg.replace("'", "");
 
-				if (exceptionMsg.contains("Couldn't create window")){
+				if (exceptionMsg.length() > 1000){
+					exceptionMsg = exceptionMsg.substring(0, 1000) + "...";
+				}
+
+				if (exceptionMsg.contains("Couldnt create window")){
 					TinyFileDialogs.tinyfd_messageBox(title + " Has Crashed!",
-							title + " wasn't able to initialize it's graphics display, sorry about that!\n\n" +
-									"This usually happens when a computer's graphics card does not support OpenGL 2.0+, or has misconfigured graphics drivers.\n\n" +
-									"If you're certain the game should be working on your computer, feel free to message the developer (Evan@ShatteredPixel.com)\n\n" +
+							title + " was not able to initialize its graphics display, sorry about that!\n\n" +
+									"This usually happens when your graphics card does not support OpenGL 2.0+, or has misconfigured graphics drivers.\n\n" +
+									"If you are certain the game should be working on your computer, feel free to message the developer (Evan@ShatteredPixel.com)\n\n" +
 									"version: " + Game.version, "ok", "error", false);
 				} else {
 					TinyFileDialogs.tinyfd_messageBox(title + " Has Crashed!",
-							title + " has run into an error it can't recover from and has crashed, sorry about that!\n\n" +
+							title + " has run into an error it cannot recover from and has crashed, sorry about that!\n\n" +
 									"If you could, please email this error message to the developer (Evan@ShatteredPixel.com):\n\n" +
 									"version: " + Game.version + "\n" +
 									exceptionMsg,
@@ -126,36 +132,41 @@ public class DesktopLauncher {
 		Lwjgl3ApplicationConfiguration config = new Lwjgl3ApplicationConfiguration();
 		
 		config.setTitle( title );
-		
+
+		//if I were implementing this from scratch I would use the full implementation title for saves
+		// (e.g. /.shatteredpixel/shatteredpixeldungeon), but we have too much existing save
+		// date to worry about transferring at this point.
+		String vendor = DesktopLauncher.class.getPackage().getImplementationTitle();
+		if (vendor == null) {
+			vendor = System.getProperty("Implementation-Title");
+		}
+		vendor = vendor.split("\\.")[1];
+
 		String basePath = "";
+		Files.FileType baseFileType = null;
 		if (SharedLibraryLoader.isWindows) {
 			if (System.getProperties().getProperty("os.name").equals("Windows XP")) {
-				basePath = "Application Data/.thiefpixel/Thief Pixel Dungeon/";
+				basePath = "Application Data/." + vendor + "/" + title + "/";
 			} else {
-				basePath = "AppData/Roaming/.thiefpixel/Thief Pixel Dungeon/";
+				basePath = "AppData/Roaming/." + vendor + "/" + title + "/";
 			}
+			baseFileType = Files.FileType.External;
 		} else if (SharedLibraryLoader.isMac) {
-			basePath = "Library/Application Support/Shattered Pixel Dungeon/";
+			basePath = "Library/Application Support/" + title + "/";
+			baseFileType = Files.FileType.External;
 		} else if (SharedLibraryLoader.isLinux) {
-			String XDGHome = System.getenv().get("XDG_DATA_HOME");
-			if (XDGHome == null) XDGHome = ".local/share/";
-			basePath = XDGHome + ".thiefpixel/thief-pixel-dungeon/";
+			String XDGHome = System.getenv("XDG_DATA_HOME");
+			if (XDGHome == null) XDGHome = System.getProperty("user.home") + "/.local/share";
 
-			//copy over files from old linux save DIR, pre-1.2.0
-			FileHandle oldBase = new Lwjgl3FileHandle(".thiefpixel/thief-pixel-dungeon/", Files.FileType.External);
-			FileHandle newBase = new Lwjgl3FileHandle(XDGHome + ".thiefpixel/thief-pixel-dungeon/", Files.FileType.External);
-			if (oldBase.exists()){
-				if (!newBase.exists()) {
-					oldBase.copyTo(newBase.parent());
-				}
-				oldBase.deleteDirectory();
-				oldBase.parent().delete(); //only regular delete, in case of saves from other PD versions
-			}
+			String titleLinux = title.toLowerCase(Locale.ROOT).replace(" ", "-");
+			basePath = XDGHome + "/." + vendor + "/" + titleLinux + "/";
+
+			baseFileType = Files.FileType.Absolute;
 		}
 
-		config.setPreferencesConfig( basePath, Files.FileType.External );
-		SPDSettings.set( new Lwjgl3Preferences( SPDSettings.DEFAULT_PREFS_FILE, basePath) );
-		FileUtils.setDefaultFileProperties( Files.FileType.External, basePath );
+		config.setPreferencesConfig( basePath, baseFileType );
+		SPDSettings.set( new Lwjgl3Preferences( new Lwjgl3FileHandle(basePath + SPDSettings.DEFAULT_PREFS_FILE, baseFileType) ));
+		FileUtils.setDefaultFileProperties( baseFileType, basePath );
 		
 		config.setWindowSizeLimits( 720, 400, -1, -1 );
 		Point p = SPDSettings.windowResolution();

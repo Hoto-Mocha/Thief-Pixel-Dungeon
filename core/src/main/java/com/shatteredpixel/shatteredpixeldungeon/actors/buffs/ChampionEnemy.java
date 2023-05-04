@@ -3,7 +3,7 @@
  * Copyright (C) 2012-2015 Oleg Dolya
  *
  * Shattered Pixel Dungeon
- * Copyright (C) 2014-2022 Evan Debenham
+ * Copyright (C) 2014-2023 Evan Debenham
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -21,6 +21,7 @@
 
 package com.shatteredpixel.shatteredpixeldungeon.actors.buffs;
 
+import com.shatteredpixel.shatteredpixeldungeon.Challenges;
 import com.shatteredpixel.shatteredpixeldungeon.Dungeon;
 import com.shatteredpixel.shatteredpixeldungeon.actors.Actor;
 import com.shatteredpixel.shatteredpixeldungeon.actors.Char;
@@ -60,16 +61,6 @@ public abstract class ChampionEnemy extends Buff {
 		else target.sprite.clearAura();
 	}
 
-	@Override
-	public String toString() {
-		return Messages.get(this, "name");
-	}
-
-	@Override
-	public String desc() {
-		return Messages.get(this, "desc");
-	}
-
 	public void onAttackProc(Char enemy ){
 
 	}
@@ -99,15 +90,20 @@ public abstract class ChampionEnemy extends Buff {
 
 		Dungeon.mobsToChampion--;
 
-		if (Dungeon.mobsToChampion <= 0){
-			switch (Random.Int(6)){
-				case 0: default:    Buff.affect(m, Blazing.class);      break;
-				case 1:             Buff.affect(m, Projecting.class);   break;
-				case 2:             Buff.affect(m, AntiMagic.class);    break;
-				case 3:             Buff.affect(m, Giant.class);        break;
-				case 4:             Buff.affect(m, Blessed.class);      break;
-				case 5:             Buff.affect(m, Growing.class);      break;
-			}
+		//we roll for a champion enemy even if we aren't spawning one to ensure that
+		//mobsToChampion does not affect levelgen RNG (number of calls to Random.Int() is constant)
+		Class<?extends ChampionEnemy> buffCls;
+		switch (Random.Int(6)){
+			case 0: default:    buffCls = Blazing.class;      break;
+			case 1:             buffCls = Projecting.class;   break;
+			case 2:             buffCls = AntiMagic.class;    break;
+			case 3:             buffCls = Giant.class;        break;
+			case 4:             buffCls = Blessed.class;      break;
+			case 5:             buffCls = Growing.class;      break;
+		}
+
+		if (Dungeon.mobsToChampion <= 0 && Dungeon.isChallenged(Challenges.CHAMPION_ENEMIES)) {
+			Buff.affect(m, buffCls);
 			m.state = m.WANDERING;
 		}
 	}
@@ -125,9 +121,12 @@ public abstract class ChampionEnemy extends Buff {
 
 		@Override
 		public void detach() {
-			for (int i : PathFinder.NEIGHBOURS9){
-				if (!Dungeon.level.solid[target.pos+i]){
-					GameScene.add(Blob.seed(target.pos+i, 2, Fire.class));
+			//don't trigger when killed by being knocked into a pit
+			if (target.flying || !Dungeon.level.pit[target.pos]) {
+				for (int i : PathFinder.NEIGHBOURS9) {
+					if (!Dungeon.level.solid[target.pos + i]) {
+						GameScene.add(Blob.seed(target.pos + i, 2, Fire.class));
+					}
 				}
 			}
 			super.detach();
@@ -196,7 +195,8 @@ public abstract class ChampionEnemy extends Buff {
 			} else {
 				boolean[] passable = BArray.not(Dungeon.level.solid, null);
 				for (Char ch : Actor.chars()) {
-					if (ch != target) passable[ch.pos] = false;
+					//our own tile is always passable
+					passable[ch.pos] = ch == target;
 				}
 
 				PathFinder.buildDistanceMap(enemy.pos, passable, 2);

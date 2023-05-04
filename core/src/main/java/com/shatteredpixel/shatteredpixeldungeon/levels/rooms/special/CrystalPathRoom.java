@@ -3,7 +3,7 @@
  * Copyright (C) 2012-2015 Oleg Dolya
  *
  * Shattered Pixel Dungeon
- * Copyright (C) 2014-2022 Evan Debenham
+ * Copyright (C) 2014-2023 Evan Debenham
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -27,11 +27,14 @@ import com.shatteredpixel.shatteredpixeldungeon.items.Gold;
 import com.shatteredpixel.shatteredpixeldungeon.items.Item;
 import com.shatteredpixel.shatteredpixeldungeon.items.keys.CrystalKey;
 import com.shatteredpixel.shatteredpixeldungeon.items.keys.IronKey;
+import com.shatteredpixel.shatteredpixeldungeon.items.potions.PotionOfExperience;
+import com.shatteredpixel.shatteredpixeldungeon.items.scrolls.ScrollOfTransmutation;
 import com.shatteredpixel.shatteredpixeldungeon.levels.Level;
 import com.shatteredpixel.shatteredpixeldungeon.levels.Terrain;
 import com.shatteredpixel.shatteredpixeldungeon.levels.painters.Painter;
 import com.shatteredpixel.shatteredpixeldungeon.levels.rooms.Room;
 import com.shatteredpixel.shatteredpixeldungeon.levels.rooms.standard.EmptyRoom;
+import com.sun.tools.javac.jvm.Gen;
 import com.watabou.utils.Point;
 import com.watabou.utils.Random;
 
@@ -126,25 +129,22 @@ public class CrystalPathRoom extends SpecialRoom {
 			Item item;
 			switch (i){
 				case 0: default:
-					item = new Gold(Random.NormalIntRange(5, 12));
+					item = new Gold().random();
 					break;
 				case 1:
-					item = Generator.random(Random.oneOf(
-							Generator.Category.SEED,
-							Generator.Category.STONE)
-					);
+					item = Generator.random(Generator.Category.POTION);
 					break;
 				case 2:
-					item = Generator.random(Random.oneOf(
-							Generator.Category.POTION,
-							Generator.Category.SCROLL)
-					);
+					item = Generator.random(Generator.Category.SCROLL);
 					break;
 				case 3:
-					item = Generator.random(Random.oneOf(
-							Generator.Category.WEAPON,
-							Generator.Category.ARMOR)
-					);
+					if (Random.Int(2) == 0){
+						item = Generator.random(Random.oneOf(Generator.Category.POTION, Generator.Category.SCROLL));
+					} else if (Random.Int(2) == 0) {
+						item = new PotionOfExperience();
+					} else {
+						item = new ScrollOfTransmutation();
+					}
 					break;
 			}
 			level.drop(item, pos);

@@ -3,7 +3,7 @@
  * Copyright (C) 2012-2015 Oleg Dolya
  *
  * Shattered Pixel Dungeon
- * Copyright (C) 2014-2022 Evan Debenham
+ * Copyright (C) 2014-2023 Evan Debenham
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -30,6 +30,7 @@ import com.shatteredpixel.shatteredpixeldungeon.actors.mobs.npcs.Imp;
 import com.shatteredpixel.shatteredpixeldungeon.items.Generator;
 import com.shatteredpixel.shatteredpixeldungeon.items.Item;
 import com.shatteredpixel.shatteredpixeldungeon.items.scrolls.ScrollOfTeleportation;
+import com.shatteredpixel.shatteredpixeldungeon.scenes.GameScene;
 import com.shatteredpixel.shatteredpixeldungeon.sprites.GolemSprite;
 import com.shatteredpixel.shatteredpixeldungeon.utils.BArray;
 import com.watabou.utils.Bundle;
@@ -69,7 +70,7 @@ public class Golem extends Mob {
 	
 	@Override
 	public int drRoll() {
-		return Random.NormalIntRange(0, 12);
+		return super.drRoll() + Random.NormalIntRange(0, 12);
 	}
 
 	@Override
@@ -164,6 +165,7 @@ public class Golem extends Mob {
 			if (enemy instanceof Hero){
 				((Hero) enemy).interrupt();
 				Dungeon.observe();
+				GameScene.updateFog();
 			}
 		}
 
