@@ -83,7 +83,7 @@ public class DesktopLauncher {
 
 				//shorten/simplify exception message to make it easier to fit into a message box
 				exceptionMsg = exceptionMsg.replaceAll("\\(.*:([0-9]*)\\)", "($1)");
-				exceptionMsg = exceptionMsg.replace("com.shatteredpixel.shatteredpixeldungeon.", "");
+				exceptionMsg = exceptionMsg.replace("com.thiefpixel.thiefpixeldungeon.", "");
 				exceptionMsg = exceptionMsg.replace("com.watabou.", "");
 				exceptionMsg = exceptionMsg.replace("com.badlogic.gdx.", "");
 				exceptionMsg = exceptionMsg.replace("\t", "    ");
@@ -97,12 +97,12 @@ public class DesktopLauncher {
 					TinyFileDialogs.tinyfd_messageBox(title + " Has Crashed!",
 							title + " was not able to initialize its graphics display, sorry about that!\n\n" +
 									"This usually happens when your graphics card does not support OpenGL 2.0+, or has misconfigured graphics drivers.\n\n" +
-									"If you are certain the game should be working on your computer, feel free to message the developer (Evan@ShatteredPixel.com)\n\n" +
+									"If you are certain the game should be working on your computer, feel free to post this error message to the github.\n\n" +
 									"version: " + Game.version, "ok", "error", false);
 				} else {
 					TinyFileDialogs.tinyfd_messageBox(title + " Has Crashed!",
 							title + " has run into an error it cannot recover from and has crashed, sorry about that!\n\n" +
-									"If you could, please email this error message to the developer (Evan@ShatteredPixel.com):\n\n" +
+									"If you could, please post this error message to the github.\n\n" +
 									"version: " + Game.version + "\n" +
 									exceptionMsg,
 							"ok", "error", false);
